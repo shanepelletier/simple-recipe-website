@@ -1,0 +1,17 @@
+[project]
+name = "simple-recipe-website"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Shane Pelletier", email = "hello@shanepelletier.com" }
+]
+requires-python = ">=3.13"
+dependencies = []
+
+[project.scripts]
+simple-recipe-website = "simple_recipe_website:main"
+
+[build-system]
+requires = ["uv_build>=0.12.5,<0.13.0"]
+build-backend = "uv_build"
