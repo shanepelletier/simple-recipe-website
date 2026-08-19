@@ -6,7 +6,10 @@ authors = [
     { name = "Shane Pelletier", email = "hello@shanepelletier.com" }
 ]
 requires-python = ">=3.13"
-dependencies = []
+dependencies = [
+    "django>=6.1",
+    "psycopg[binary,pool]>=3.3.4",
+]
 
 [project.scripts]
 simple-recipe-website = "simple_recipe_website:main"
@@ -14,3 +17,8 @@ simple-recipe-website = "simple_recipe_website:main"
 [build-system]
 requires = ["uv_build>=0.12.5,<0.13.0"]
 build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+]
