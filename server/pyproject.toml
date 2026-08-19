@@ -9,7 +9,6 @@ requires-python = ">=3.13"
 dependencies = [
     "django>=6.1",
     "psycopg[binary,pool]>=3.3.4",
-    "python-dotenv>=1.2.3",
 ]
 
 [project.scripts]
