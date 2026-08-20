@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.db.models.signals import post_delete
 
@@ -156,3 +157,47 @@ class Step(models.Model):
 
     def __str__(self):
         return f"{self.recipe.name} step {self.position}"
+
+
+class Review(models.Model):
+    recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE, related_name="reviews")
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    rating = models.PositiveSmallIntegerField(
+        validators=[MinValueValidator(1), MaxValueValidator(5)]
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            # The DB constraint is what actually enforces one-review-per-user.
+            # A read-then-write check in the view would not survive two
+            # simultaneous requests.
+            models.UniqueConstraint(fields=["recipe", "user"], name="one_review_per_user"),
+            models.CheckConstraint(
+                condition=models.Q(rating__gte=1) & models.Q(rating__lte=5),
+                name="rating_between_1_and_5",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.user} rated {self.recipe.name} {self.rating}"
+
+
+class Comment(models.Model):
+    recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE, related_name="comments")
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    body = models.TextField(max_length=2000)
+    photo = models.ImageField(
+        upload_to=upload_to, null=True, blank=True, validators=[validate_image]
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [models.Index(fields=["recipe", "-created_at"])]
+
+    def __str__(self):
+        return f"{self.author} on {self.recipe.name}"
+
+
+post_delete.connect(delete_photo_file, sender=Comment)
