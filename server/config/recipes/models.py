@@ -1,4 +1,9 @@
+from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import models
+from django.db.models.signals import post_delete
+
+from .photos import delete_photo_file, upload_to, validate_image
 
 
 class Unit(models.Model):
@@ -65,3 +70,57 @@ class Ingredient(models.Model):
         """
         cleaned = "".join(c for c in name.lower() if c.isalnum() or c.isspace())
         return " ".join(cleaned.split())
+
+
+class Recipe(models.Model):
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="recipes"
+    )
+    name = models.CharField(max_length=200)
+    photo = models.ImageField(
+        upload_to=upload_to, null=True, blank=True, validators=[validate_image]
+    )
+    tags = models.ManyToManyField(Tag, blank=True, related_name="recipes")
+
+    # Denormalized so the grid can sort by rating without a GROUP BY.
+    rating_sum = models.PositiveIntegerField(default=0)
+    rating_count = models.PositiveIntegerField(default=0)
+
+    # Optimistic locking. Bumped on every write; stale writes get a 409.
+    version = models.PositiveIntegerField(default=1)
+
+    copied_from = models.ForeignKey(
+        "self", null=True, blank=True, on_delete=models.SET_NULL, related_name="copies"
+    )
+    # Kept separately so attribution survives the original being deleted.
+    copied_from_username = models.CharField(max_length=150, blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["-created_at"]),
+            models.Index(fields=["name"]),
+            models.Index(fields=["owner"]),
+        ]
+
+    def __str__(self):
+        return self.name
+
+    @property
+    def rating_average(self):
+        if not self.rating_count:
+            return None
+        return round(self.rating_sum / self.rating_count, 2)
+
+    def clean(self):
+        # M2M isn't available until the row exists, so only check saved rows.
+        if self.pk and self.tags.count() > settings.MAX_TAGS_PER_RECIPE:
+            raise ValidationError(
+                {"tags": f"A recipe can have at most {settings.MAX_TAGS_PER_RECIPE} tags."}
+            )
+
+
+post_delete.connect(delete_photo_file, sender=Recipe)
