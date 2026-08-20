@@ -12,6 +12,7 @@ services:
       - "${DB_PORT}:5432"
     volumes:
       - ./db/init:/docker-entrypoint-initdb.d:ro
+      - pgdata:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d $$POSTGRES_DB"]
       interval: 5s
@@ -30,3 +31,9 @@ services:
       DB_PORT: 5432
     ports:
       - "${APP_PORT}:8000"
+    volumes:
+      - media:/app/config/media
+
+volumes:
+  pgdata:
+  media:
