@@ -29,6 +29,17 @@ class Unit(models.Model):
         return self.name
 
 
+class Tag(models.Model):
+    """Created by admins only, via the Django admin."""
+    name = models.CharField(max_length=30, unique=True)
+
+    class Meta:
+        ordering = ["name"]     # global consistent order, per the clarification
+
+    def __str__(self):
+        return self.name
+
+
 class Ingredient(models.Model):
     name = models.CharField(max_length=100)                  # "orange"
     plural = models.CharField(max_length=100)                # "oranges"
