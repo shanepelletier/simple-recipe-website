@@ -13,8 +13,8 @@ class Unit(models.Model):
         VOLUME = "volume", "Volume"
         COUNT = "count", "Count"
 
-    name = models.CharField(max_length=30, unique=True)      # "pound"
-    plural = models.CharField(max_length=30)                 # "pounds"
+    name = models.CharField(max_length=30, unique=True)  # "pound"
+    plural = models.CharField(max_length=30)  # "pounds"
     abbreviation = models.CharField(max_length=10, blank=True)
     category = models.CharField(max_length=10, choices=Category.choices)
     takes_of = models.BooleanField(
@@ -31,22 +31,26 @@ class Unit(models.Model):
 
 class Tag(models.Model):
     """Created by admins only, via the Django admin."""
+
     name = models.CharField(max_length=30, unique=True)
 
     class Meta:
-        ordering = ["name"]     # global consistent order, per the clarification
+        ordering = ["name"]  # global consistent order, per the clarification
 
     def __str__(self):
         return self.name
 
 
 class Ingredient(models.Model):
-    name = models.CharField(max_length=100)                  # "orange"
-    plural = models.CharField(max_length=100)                # "oranges"
+    name = models.CharField(max_length=100)  # "orange"
+    plural = models.CharField(max_length=100)  # "oranges"
     normalized_name = models.CharField(max_length=100, unique=True, db_index=True)
 
     class Meta:
         ordering = ["name"]
+
+    def __str__(self):
+        return self.name
 
     def save(self, *args, **kwargs):
         self.normalized_name = self.normalize(self.name)
@@ -61,6 +65,3 @@ class Ingredient(models.Model):
         """
         cleaned = "".join(c for c in name.lower() if c.isalnum() or c.isspace())
         return " ".join(cleaned.split())
-
-    def __str__(self):
-        return self.name

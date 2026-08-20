@@ -13,7 +13,7 @@ def upload_to(instance, filename: str) -> str:
     Also prevents two people uploading "photo.jpg" from colliding.
     """
     extension = Path(filename).suffix.lower()
-    folder = f"{instance._meta.model_name}s"      # "recipes" / "comments"
+    folder = f"{instance._meta.model_name}s"  # "recipes" / "comments"
     return f"{folder}/{uuid4().hex}{extension}"
 
 
