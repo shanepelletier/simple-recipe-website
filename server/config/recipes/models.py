@@ -3,6 +3,7 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models.signals import post_delete
 
+from .format import format_quantity
 from .photos import delete_photo_file, upload_to, validate_image
 
 
@@ -124,3 +125,34 @@ class Recipe(models.Model):
 
 
 post_delete.connect(delete_photo_file, sender=Recipe)
+
+
+class RecipeIngredient(models.Model):
+    recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE, related_name="ingredients")
+    ingredient = models.ForeignKey(Ingredient, on_delete=models.PROTECT)
+    unit = models.ForeignKey(Unit, on_delete=models.PROTECT)
+    quantity = models.DecimalField(max_digits=10, decimal_places=3)
+    position = models.PositiveSmallIntegerField()
+
+    class Meta:
+        ordering = ["position"]
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(quantity__gt=0), name="recipe_ingredient_quantity_positive"
+            ),
+        ]
+
+    def __str__(self):
+        return format_quantity(self.quantity, self.unit, self.ingredient)
+
+
+class Step(models.Model):
+    recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE, related_name="steps")
+    text = models.TextField()
+    position = models.PositiveSmallIntegerField()
+
+    class Meta:
+        ordering = ["position"]
+
+    def __str__(self):
+        return f"{self.recipe.name} step {self.position}"
