@@ -201,3 +201,32 @@ class Comment(models.Model):
 
 
 post_delete.connect(delete_photo_file, sender=Comment)
+
+
+class ShoppingItem(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="shopping_items"
+    )
+    ingredient = models.ForeignKey(Ingredient, on_delete=models.PROTECT)
+    unit = models.ForeignKey(Unit, on_delete=models.PROTECT)
+    quantity = models.DecimalField(max_digits=10, decimal_places=3)
+    is_checked = models.BooleanField(default=False)
+    # SET_NULL: deleting a recipe must not remove items you still need to buy.
+    source_recipe = models.ForeignKey(Recipe, null=True, blank=True, on_delete=models.SET_NULL)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["ingredient__name", "unit__name"]
+        constraints = [
+            # Entries combine only on an exact ingredient+unit match.
+            # "1 pound of beef" and "1 cup of beef" are two rows, on purpose.
+            models.UniqueConstraint(
+                fields=["user", "ingredient", "unit"], name="one_row_per_user_ingredient_unit"
+            ),
+            models.CheckConstraint(
+                condition=models.Q(quantity__gt=0), name="shopping_quantity_positive"
+            ),
+        ]
+
+    def __str__(self):
+        return format_quantity(self.quantity, self.unit, self.ingredient)
