@@ -11,12 +11,8 @@ dependencies = [
     "psycopg[binary,pool]>=3.3.4",
 ]
 
-[project.scripts]
-simple-recipe-website = "simple_recipe_website:main"
-
-[build-system]
-requires = ["uv_build>=0.12.5,<0.13.0"]
-build-backend = "uv_build"
+[tool.uv]
+package = false
 
 [dependency-groups]
 dev = [
