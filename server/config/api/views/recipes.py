@@ -36,9 +36,14 @@ def _filtered_recipes(params):
     if search:
         recipes = recipes.filter(name__icontains=search)
 
-    tag = (params.get("tag") or "").strip()
-    if tag:
-        recipes = recipes.filter(tags__name=tag)
+    # Repeated ?tag=x&tag=y. Chaining one .filter() per tag (rather than a
+    # single tags__name__in=[...]) is what gives AND semantics on an M2M —
+    # each call joins the through table again, so a recipe must carry every
+    # requested tag, and no .distinct() is needed to avoid duplicate rows.
+    for tag in params.getlist("tag"):
+        tag = tag.strip()
+        if tag:
+            recipes = recipes.filter(tags__name=tag)
 
     author = (params.get("author") or "").strip()
     if author:
