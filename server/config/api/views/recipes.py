@@ -1,11 +1,12 @@
 from django.core.paginator import Paginator
 from django.db.models import Case, F, FloatField, Value, When
 from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
 from django.views.decorators.http import require_http_methods
 from recipes.models import Recipe
 
 from api.http import json_errors
-from api.serializers import recipe_card_to_dict
+from api.serializers import recipe_card_to_dict, recipe_to_dict
 
 PAGE_SIZE = 24
 
@@ -71,3 +72,16 @@ def recipe_list(request):
             "total": page.paginator.count,
         }
     )
+
+
+def _detail_queryset():
+    return Recipe.objects.select_related("owner", "copied_from").prefetch_related(
+        "tags", "steps", "ingredients__ingredient", "ingredients__unit"
+    )
+
+
+@require_http_methods(["GET"])
+@json_errors
+def recipe_detail(request, pk):
+    recipe = get_object_or_404(_detail_queryset(), pk=pk)
+    return JsonResponse({"recipe": recipe_to_dict(recipe, user=request.user)})
