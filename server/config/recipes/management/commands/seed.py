@@ -1,8 +1,10 @@
+import random
 from decimal import Decimal
 from io import BytesIO
 from uuid import uuid4
 
 from accounts.models import User
+from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import Group, Permission
 from django.core.files.base import ContentFile
 from django.core.management import call_command
@@ -12,6 +14,7 @@ from PIL import Image, ImageDraw
 
 from recipes.models import Comment, Ingredient, Recipe, RecipeIngredient, Review, Step, Tag, Unit
 
+from ._bulk_data import BULK_ADJECTIVES, BULK_NOUNS
 from ._demo_data import DEMO_COMMENTS, DEMO_RECIPES, DEMO_REVIEWS
 
 DEMO_PASSWORD = "demo-password-123"
@@ -59,7 +62,7 @@ class Command(BaseCommand):
             if options["demo"]:
                 self._seed_demo()
             elif options["users"] or options["recipes"]:
-                raise CommandError("Bulk mode isn't implemented yet.")
+                self._seed_bulk(options)
             else:
                 raise CommandError("Pass --demo, or --users/--recipes for bulk mode.")
 
@@ -190,3 +193,45 @@ class Command(BaseCommand):
                 body=spec["body"],
                 photo=photo,
             )
+
+    def _seed_bulk(self, options):
+        self.stdout.write("Loading reference data...")
+        call_command("loaddata", "reference")
+
+        rng = random.Random(options["seed"])
+
+        if options["users"]:
+            self.stdout.write(f"Creating {options['users']} users...")
+            self._bulk_users(options["users"])
+
+        if options["recipes"]:
+            self.stdout.write(f"Creating {options['recipes']} recipes...")
+            self._bulk_recipes(options["recipes"], rng)
+
+    def _bulk_users(self, count):
+        password = make_password("bulk-password-123")
+        User.objects.bulk_create(
+            (User(username=f"user{i:05d}", password=password) for i in range(1, count + 1)),
+            batch_size=1000,
+            ignore_conflicts=True,  # safe to rerun without --flush deleting users first
+        )
+
+    def _bulk_recipes(self, count, rng):
+        # No ingredients, steps, tags, or photos — bulk mode exists purely to
+        # exercise grid pagination and rating-sort at volume, and 5000 rows
+        # of any of those would be slow for no benefit to that goal.
+        owners = list(User.objects.all())
+        if not owners:
+            raise CommandError("No users exist to own recipes — pass --users too.")
+
+        def make_recipe():
+            rating_count = rng.randint(0, 30)
+            rating_sum = sum(rng.randint(1, 5) for _ in range(rating_count))
+            return Recipe(
+                owner=rng.choice(owners),
+                name=f"{rng.choice(BULK_ADJECTIVES)} {rng.choice(BULK_NOUNS)}",
+                rating_sum=rating_sum,
+                rating_count=rating_count,
+            )
+
+        Recipe.objects.bulk_create((make_recipe() for _ in range(count)), batch_size=1000)
