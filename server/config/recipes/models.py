@@ -107,6 +107,12 @@ class Recipe(models.Model):
             models.Index(fields=["name"]),
             models.Index(fields=["owner"]),
         ]
+        permissions = [
+            ("moderate_recipe", "Can edit and delete any recipe"),
+            ("moderate_tag", "Can manage tags"),
+            ("moderate_ingredient", "Can manage ingredients"),
+            ("moderate_comment", "Can delete any comment"),
+        ]
 
     def __str__(self):
         return self.name
