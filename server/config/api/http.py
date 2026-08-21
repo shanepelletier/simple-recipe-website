@@ -1,6 +1,7 @@
 import json
 from functools import wraps
 
+from django.core.exceptions import ValidationError
 from django.http import JsonResponse
 
 
@@ -29,5 +30,28 @@ def login_required_json(view):
         if not request.user.is_authenticated:
             return error("You must be signed in to do that.", status=401)
         return view(request, *args, **kwargs)
+
+    return wrapper
+
+
+def json_errors(view):
+    """Convert BadRequest and model ValidationError into the standard envelope.
+
+    Put this on every view. Without it a malformed body is a 500, and a
+    model's own validation message never reaches the user.
+    """
+
+    @wraps(view)
+    def wrapper(request, *args, **kwargs):
+        try:
+            return view(request, *args, **kwargs)
+        except BadRequest as exc:
+            return error(str(exc))
+        except ValidationError as exc:
+            # `error_dict` exists only when the ValidationError was raised
+            # with a {field: message} dict — model full_clean() does that.
+            if hasattr(exc, "error_dict"):
+                return error("Please correct the errors below.", fields=exc.message_dict)
+            return error(" ".join(exc.messages))
 
     return wrapper
