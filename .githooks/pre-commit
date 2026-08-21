@@ -1,5 +1,6 @@
 #!/bin/sh
-# Blocks the commit if the Django project fails ruff lint/format or mypy.
+# Blocks the commit if the Django project fails ruff lint/format, mypy, or
+# the test suite.
 #
 # Activate once per clone with:
 #   git config core.hooksPath .githooks
@@ -10,6 +11,7 @@ cd "$(git rev-parse --show-toplevel)/server"
 
 uv run ruff check .
 uv run ruff format --check .
-# The django-stubs mypy plugin initializes real Django settings to
-# introspect models, so it needs the same env vars the app runs with.
+# The django-stubs mypy plugin and pytest-django both initialize real
+# Django settings, so they need the same env vars the app runs with.
 uv run --env-file ../.env mypy config
+uv run --env-file ../.env pytest
