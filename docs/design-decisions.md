@@ -11,3 +11,5 @@
 - Mix testing and local development credentials in a single `.env` file. While separating out these credentials would be ideal (especially when eventually deploying to production), the current setup using Docker Compose only reads in the single `.env` file and so the test credentials need to be present in `.env` anyway. This needs to be revisited if the application is every deployed to production.
 - Images are stored in the `media/` subdirectory of the Django project. They should be stored elsewhere (possibly not even on the same machine as the Django server) in production.
 - Pagination uses Django's `Paginator` instead of cursor pagination. A page count and browsing by page are useful UX, and the data quantity isn't currently high enough that the performance problems of `OFFSET` show up.
+- Recipe search is case insensitive.
+- Searching for multiple tags is supported, and means "find all recipes with tag X and with tag Y", so a user can find "vegan" and "quick" recipes easily. Adding an option to also search with OR might make sense in the future.
