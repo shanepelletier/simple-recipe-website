@@ -13,3 +13,4 @@
 - Pagination uses Django's `Paginator` instead of cursor pagination. A page count and browsing by page are useful UX, and the data quantity isn't currently high enough that the performance problems of `OFFSET` show up.
 - Recipe search is case insensitive.
 - Searching for multiple tags is supported, and means "find all recipes with tag X and with tag Y", so a user can find "vegan" and "quick" recipes easily. Adding an option to also search with OR might make sense in the future.
+- Recipe images are copied when recipes are copied, instead of pointing the copied recipe to the same image file. This is so that deleting a recipe doesn't remove the image from the copy (and deleting a copy doesn't remove the image from the original). A future change may be to use a sort of reference counting to remove stale images and keep only one copy of each image around.
