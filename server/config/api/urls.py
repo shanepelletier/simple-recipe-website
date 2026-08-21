@@ -10,5 +10,5 @@ urlpatterns = [
     path("auth/logout/", auth.log_out, name="logout"),
     path("auth/me/", auth.me, name="me"),
     path("recipes/", recipes.recipe_collection, name="recipe-list"),
-    path("recipes/<int:pk>/", recipes.recipe_detail, name="recipe-detail"),
+    path("recipes/<int:pk>/", recipes.recipe_resource, name="recipe-detail"),
 ]

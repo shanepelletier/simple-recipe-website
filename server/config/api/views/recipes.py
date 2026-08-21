@@ -3,10 +3,12 @@ from django.db import transaction
 from django.db.models import Case, F, FloatField, Value, When
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 from recipes.models import Recipe, RecipeIngredient, Step
+from recipes.permissions import can_edit_recipe
 
-from api.http import json_body, json_errors, login_required_json
+from api.http import error, json_body, json_errors, login_required_json
 from api.recipe_payload import parse_recipe_payload
 from api.serializers import recipe_card_to_dict, recipe_to_dict
 
@@ -115,8 +117,54 @@ def _detail_queryset():
     )
 
 
-@require_http_methods(["GET"])
-@json_errors
 def recipe_detail(request, pk):
     recipe = get_object_or_404(_detail_queryset(), pk=pk)
     return JsonResponse({"recipe": recipe_to_dict(recipe, user=request.user)})
+
+
+@login_required_json
+def recipe_update(request, pk):
+    recipe = get_object_or_404(Recipe, pk=pk)
+    if not can_edit_recipe(request.user, recipe):
+        return error("You can only edit your own recipes.", status=403)
+
+    body = json_body(request)
+    if "version" not in body:
+        return error("Missing version.", fields={"version": ["Reload the page and try again."]})
+
+    parsed = parse_recipe_payload(body)
+
+    with transaction.atomic():
+        # The database checks the version and writes in ONE statement.
+        updated = Recipe.objects.filter(pk=pk, version=body["version"]).update(
+            name=parsed.name,
+            version=F("version") + 1,
+            # auto_now does NOT fire on a queryset .update(), so set it here
+            # or updated_at silently stops moving.
+            updated_at=timezone.now(),
+        )
+
+        if not updated:
+            # "Gone" and "someone else edited it" need different messages.
+            if not Recipe.objects.filter(pk=pk).exists():
+                return error("That recipe no longer exists.", status=404)
+            return error(
+                "This recipe was changed by someone else while you were editing. "
+                "Reload to see the current version.",
+                status=409,
+            )
+
+        recipe.refresh_from_db()
+        recipe.tags.set(parsed.tags)
+        _replace_children(recipe, parsed)
+
+    recipe = _detail_queryset().get(pk=pk)
+    return JsonResponse({"recipe": recipe_to_dict(recipe, user=request.user)})
+
+
+@require_http_methods(["GET", "PATCH"])
+@json_errors
+def recipe_resource(request, pk):
+    if request.method == "GET":
+        return recipe_detail(request, pk)
+    return recipe_update(request, pk)
