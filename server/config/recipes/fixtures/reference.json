@@ -1,0 +1,493 @@
+[
+{
+  "model": "recipes.unit",
+  "pk": 1,
+  "fields": {
+    "name": "gram",
+    "plural": "grams",
+    "abbreviation": "g",
+    "category": "mass",
+    "takes_of": true
+  }
+},
+{
+  "model": "recipes.unit",
+  "pk": 2,
+  "fields": {
+    "name": "kilogram",
+    "plural": "kilograms",
+    "abbreviation": "kg",
+    "category": "mass",
+    "takes_of": true
+  }
+},
+{
+  "model": "recipes.unit",
+  "pk": 3,
+  "fields": {
+    "name": "ounce",
+    "plural": "ounces",
+    "abbreviation": "oz",
+    "category": "mass",
+    "takes_of": true
+  }
+},
+{
+  "model": "recipes.unit",
+  "pk": 4,
+  "fields": {
+    "name": "pound",
+    "plural": "pounds",
+    "abbreviation": "lb",
+    "category": "mass",
+    "takes_of": true
+  }
+},
+{
+  "model": "recipes.unit",
+  "pk": 5,
+  "fields": {
+    "name": "millilitre",
+    "plural": "millilitres",
+    "abbreviation": "mL",
+    "category": "volume",
+    "takes_of": true
+  }
+},
+{
+  "model": "recipes.unit",
+  "pk": 6,
+  "fields": {
+    "name": "litre",
+    "plural": "litres",
+    "abbreviation": "L",
+    "category": "volume",
+    "takes_of": true
+  }
+},
+{
+  "model": "recipes.unit",
+  "pk": 7,
+  "fields": {
+    "name": "teaspoon",
+    "plural": "teaspoons",
+    "abbreviation": "tsp",
+    "category": "volume",
+    "takes_of": true
+  }
+},
+{
+  "model": "recipes.unit",
+  "pk": 8,
+  "fields": {
+    "name": "tablespoon",
+    "plural": "tablespoons",
+    "abbreviation": "tbsp",
+    "category": "volume",
+    "takes_of": true
+  }
+},
+{
+  "model": "recipes.unit",
+  "pk": 9,
+  "fields": {
+    "name": "cup",
+    "plural": "cups",
+    "abbreviation": "c",
+    "category": "volume",
+    "takes_of": true
+  }
+},
+{
+  "model": "recipes.unit",
+  "pk": 10,
+  "fields": {
+    "name": "fluid ounce",
+    "plural": "fluid ounces",
+    "abbreviation": "fl oz",
+    "category": "volume",
+    "takes_of": true
+  }
+},
+{
+  "model": "recipes.unit",
+  "pk": 11,
+  "fields": {
+    "name": "whole",
+    "plural": "whole",
+    "abbreviation": "",
+    "category": "count",
+    "takes_of": false
+  }
+},
+{
+  "model": "recipes.unit",
+  "pk": 12,
+  "fields": {
+    "name": "clove",
+    "plural": "cloves",
+    "abbreviation": "",
+    "category": "count",
+    "takes_of": false
+  }
+},
+{
+  "model": "recipes.unit",
+  "pk": 13,
+  "fields": {
+    "name": "slice",
+    "plural": "slices",
+    "abbreviation": "",
+    "category": "count",
+    "takes_of": false
+  }
+},
+{
+  "model": "recipes.unit",
+  "pk": 14,
+  "fields": {
+    "name": "pinch",
+    "plural": "pinches",
+    "abbreviation": "",
+    "category": "count",
+    "takes_of": false
+  }
+},
+{
+  "model": "recipes.unit",
+  "pk": 15,
+  "fields": {
+    "name": "can",
+    "plural": "cans",
+    "abbreviation": "",
+    "category": "count",
+    "takes_of": false
+  }
+},
+{
+  "model": "recipes.tag",
+  "pk": 2,
+  "fields": {
+    "name": "gluten-free"
+  }
+},
+{
+  "model": "recipes.tag",
+  "pk": 3,
+  "fields": {
+    "name": "vegan"
+  }
+},
+{
+  "model": "recipes.tag",
+  "pk": 4,
+  "fields": {
+    "name": "vegetarian"
+  }
+},
+{
+  "model": "recipes.tag",
+  "pk": 5,
+  "fields": {
+    "name": "spicy"
+  }
+},
+{
+  "model": "recipes.tag",
+  "pk": 6,
+  "fields": {
+    "name": "quick"
+  }
+},
+{
+  "model": "recipes.tag",
+  "pk": 7,
+  "fields": {
+    "name": "dessert"
+  }
+},
+{
+  "model": "recipes.tag",
+  "pk": 8,
+  "fields": {
+    "name": "breakfast"
+  }
+},
+{
+  "model": "recipes.tag",
+  "pk": 9,
+  "fields": {
+    "name": "low-carb"
+  }
+},
+{
+  "model": "recipes.ingredient",
+  "pk": 1,
+  "fields": {
+    "name": "egg",
+    "plural": "eggs",
+    "normalized_name": "egg"
+  }
+},
+{
+  "model": "recipes.ingredient",
+  "pk": 2,
+  "fields": {
+    "name": "milk",
+    "plural": "milk",
+    "normalized_name": "milk"
+  }
+},
+{
+  "model": "recipes.ingredient",
+  "pk": 3,
+  "fields": {
+    "name": "butter",
+    "plural": "butter",
+    "normalized_name": "butter"
+  }
+},
+{
+  "model": "recipes.ingredient",
+  "pk": 4,
+  "fields": {
+    "name": "flour",
+    "plural": "flour",
+    "normalized_name": "flour"
+  }
+},
+{
+  "model": "recipes.ingredient",
+  "pk": 5,
+  "fields": {
+    "name": "sugar",
+    "plural": "sugar",
+    "normalized_name": "sugar"
+  }
+},
+{
+  "model": "recipes.ingredient",
+  "pk": 6,
+  "fields": {
+    "name": "salt",
+    "plural": "salt",
+    "normalized_name": "salt"
+  }
+},
+{
+  "model": "recipes.ingredient",
+  "pk": 7,
+  "fields": {
+    "name": "black pepper",
+    "plural": "black pepper",
+    "normalized_name": "black pepper"
+  }
+},
+{
+  "model": "recipes.ingredient",
+  "pk": 8,
+  "fields": {
+    "name": "olive oil",
+    "plural": "olive oil",
+    "normalized_name": "olive oil"
+  }
+},
+{
+  "model": "recipes.ingredient",
+  "pk": 9,
+  "fields": {
+    "name": "garlic",
+    "plural": "garlic",
+    "normalized_name": "garlic"
+  }
+},
+{
+  "model": "recipes.ingredient",
+  "pk": 10,
+  "fields": {
+    "name": "onion",
+    "plural": "onions",
+    "normalized_name": "onion"
+  }
+},
+{
+  "model": "recipes.ingredient",
+  "pk": 11,
+  "fields": {
+    "name": "tomato",
+    "plural": "tomatoes",
+    "normalized_name": "tomato"
+  }
+},
+{
+  "model": "recipes.ingredient",
+  "pk": 12,
+  "fields": {
+    "name": "potato",
+    "plural": "potatoes",
+    "normalized_name": "potato"
+  }
+},
+{
+  "model": "recipes.ingredient",
+  "pk": 13,
+  "fields": {
+    "name": "carrot",
+    "plural": "carrots",
+    "normalized_name": "carrot"
+  }
+},
+{
+  "model": "recipes.ingredient",
+  "pk": 14,
+  "fields": {
+    "name": "chicken breast",
+    "plural": "chicken breasts",
+    "normalized_name": "chicken breast"
+  }
+},
+{
+  "model": "recipes.ingredient",
+  "pk": 15,
+  "fields": {
+    "name": "ground beef",
+    "plural": "ground beef",
+    "normalized_name": "ground beef"
+  }
+},
+{
+  "model": "recipes.ingredient",
+  "pk": 16,
+  "fields": {
+    "name": "bacon",
+    "plural": "bacon",
+    "normalized_name": "bacon"
+  }
+},
+{
+  "model": "recipes.ingredient",
+  "pk": 17,
+  "fields": {
+    "name": "cheddar cheese",
+    "plural": "cheddar cheese",
+    "normalized_name": "cheddar cheese"
+  }
+},
+{
+  "model": "recipes.ingredient",
+  "pk": 18,
+  "fields": {
+    "name": "parmesan cheese",
+    "plural": "parmesan cheese",
+    "normalized_name": "parmesan cheese"
+  }
+},
+{
+  "model": "recipes.ingredient",
+  "pk": 19,
+  "fields": {
+    "name": "rice",
+    "plural": "rice",
+    "normalized_name": "rice"
+  }
+},
+{
+  "model": "recipes.ingredient",
+  "pk": 20,
+  "fields": {
+    "name": "pasta",
+    "plural": "pasta",
+    "normalized_name": "pasta"
+  }
+},
+{
+  "model": "recipes.ingredient",
+  "pk": 21,
+  "fields": {
+    "name": "bread",
+    "plural": "bread",
+    "normalized_name": "bread"
+  }
+},
+{
+  "model": "recipes.ingredient",
+  "pk": 22,
+  "fields": {
+    "name": "lemon",
+    "plural": "lemons",
+    "normalized_name": "lemon"
+  }
+},
+{
+  "model": "recipes.ingredient",
+  "pk": 23,
+  "fields": {
+    "name": "lime",
+    "plural": "limes",
+    "normalized_name": "lime"
+  }
+},
+{
+  "model": "recipes.ingredient",
+  "pk": 24,
+  "fields": {
+    "name": "basil",
+    "plural": "basil",
+    "normalized_name": "basil"
+  }
+},
+{
+  "model": "recipes.ingredient",
+  "pk": 25,
+  "fields": {
+    "name": "cilantro",
+    "plural": "cilantro",
+    "normalized_name": "cilantro"
+  }
+},
+{
+  "model": "recipes.ingredient",
+  "pk": 26,
+  "fields": {
+    "name": "cumin",
+    "plural": "cumin",
+    "normalized_name": "cumin"
+  }
+},
+{
+  "model": "recipes.ingredient",
+  "pk": 27,
+  "fields": {
+    "name": "paprika",
+    "plural": "paprika",
+    "normalized_name": "paprika"
+  }
+},
+{
+  "model": "recipes.ingredient",
+  "pk": 28,
+  "fields": {
+    "name": "soy sauce",
+    "plural": "soy sauce",
+    "normalized_name": "soy sauce"
+  }
+},
+{
+  "model": "recipes.ingredient",
+  "pk": 29,
+  "fields": {
+    "name": "vanilla extract",
+    "plural": "vanilla extract",
+    "normalized_name": "vanilla extract"
+  }
+},
+{
+  "model": "recipes.ingredient",
+  "pk": 30,
+  "fields": {
+    "name": "baking powder",
+    "plural": "baking powder",
+    "normalized_name": "baking powder"
+  }
+}
+]
