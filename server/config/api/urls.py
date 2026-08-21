@@ -20,4 +20,9 @@ urlpatterns = [
     path("units/", reference.unit_list, name="unit-list"),
     path("ingredients/", reference.ingredient_list, name="ingredient-list"),
     path("shopping-list/", shopping.shopping_collection, name="shopping-list"),
+    path(
+        "shopping-list/from-recipe/<int:pk>/",
+        shopping.shopping_add_from_recipe,
+        name="shopping-from-recipe",
+    ),
 ]

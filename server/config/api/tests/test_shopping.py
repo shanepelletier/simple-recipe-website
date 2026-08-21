@@ -86,3 +86,47 @@ def test_the_list_only_ever_shows_your_own_items(client, author, other_user, ref
 @pytest.mark.django_db
 def test_the_shopping_list_requires_a_signed_in_user(client, db):
     assert client.get("/api/shopping-list/").status_code == 401
+
+
+@pytest.mark.django_db
+def test_adding_a_recipe_adds_all_its_ingredients(auth_client, author, make_recipe):
+    make_recipe(author, ingredients=(("2", "pound", "ground beef"), ("1", "whole", "onion")))
+    recipe_id = author.recipes.get().id
+
+    groups = auth_client.post(f"/api/shopping-list/from-recipe/{recipe_id}/").json()["groups"]
+
+    assert [g["ingredient"] for g in groups] == ["ground beef", "onion"]
+
+
+@pytest.mark.django_db
+def test_adding_the_same_recipe_twice_doubles_the_quantities(auth_client, author, make_recipe):
+    recipe = make_recipe(author, ingredients=(("2", "pound", "ground beef"),))
+
+    auth_client.post(f"/api/shopping-list/from-recipe/{recipe.pk}/")
+    auth_client.post(f"/api/shopping-list/from-recipe/{recipe.pk}/")
+
+    assert ShoppingItem.objects.get().quantity == Decimal("4")
+
+
+@pytest.mark.django_db
+def test_two_recipes_sharing_an_ingredient_and_unit_merge(auth_client, author, make_recipe):
+    chili = make_recipe(author, name="Chili", ingredients=(("2", "pound", "ground beef"),))
+    tacos = make_recipe(author, name="Tacos", ingredients=(("1", "pound", "ground beef"),))
+
+    auth_client.post(f"/api/shopping-list/from-recipe/{chili.pk}/")
+    auth_client.post(f"/api/shopping-list/from-recipe/{tacos.pk}/")
+
+    assert ShoppingItem.objects.get().quantity == Decimal("3")
+
+
+@pytest.mark.django_db
+def test_two_recipes_sharing_an_ingredient_in_different_units_do_not_merge(
+    auth_client, author, make_recipe
+):
+    chili = make_recipe(author, name="Chili", ingredients=(("2", "pound", "ground beef"),))
+    bowl = make_recipe(author, name="Bowl", ingredients=(("1", "cup", "ground beef"),))
+
+    auth_client.post(f"/api/shopping-list/from-recipe/{chili.pk}/")
+    auth_client.post(f"/api/shopping-list/from-recipe/{bowl.pk}/")
+
+    assert ShoppingItem.objects.count() == 2

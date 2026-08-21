@@ -4,8 +4,9 @@ from itertools import groupby
 from django.db import transaction
 from django.db.models import F
 from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
 from django.views.decorators.http import require_http_methods
-from recipes.models import Ingredient, ShoppingItem, Unit
+from recipes.models import Ingredient, Recipe, ShoppingItem, Unit
 
 from api.http import error, json_body, json_errors, login_required_json
 from api.serializers import shopping_item_to_dict
@@ -87,3 +88,18 @@ def shopping_collection(request):
     if request.method == "GET":
         return shopping_list(request)
     return shopping_add(request)
+
+
+@require_http_methods(["POST"])
+@json_errors
+@login_required_json
+def shopping_add_from_recipe(request, pk):
+    recipe = get_object_or_404(
+        Recipe.objects.prefetch_related("ingredients__ingredient", "ingredients__unit"), pk=pk
+    )
+
+    with transaction.atomic():
+        for row in recipe.ingredients.all():
+            add_to_list(request.user, row.ingredient, row.unit, row.quantity, source_recipe=recipe)
+
+    return shopping_list(request)
