@@ -9,6 +9,6 @@ urlpatterns = [
     path("auth/login/", auth.log_in, name="login"),
     path("auth/logout/", auth.log_out, name="logout"),
     path("auth/me/", auth.me, name="me"),
-    path("recipes/", recipes.recipe_list, name="recipe-list"),
+    path("recipes/", recipes.recipe_collection, name="recipe-list"),
     path("recipes/<int:pk>/", recipes.recipe_detail, name="recipe-detail"),
 ]

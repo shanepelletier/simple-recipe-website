@@ -46,7 +46,7 @@ def json_errors(view):
         try:
             return view(request, *args, **kwargs)
         except BadRequest as exc:
-            return error(str(exc))
+            return error(str(exc), fields=getattr(exc, "fields", None))
         except ValidationError as exc:
             # `error_dict` exists only when the ValidationError was raised
             # with a {field: message} dict — model full_clean() does that.

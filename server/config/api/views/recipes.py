@@ -1,11 +1,13 @@
 from django.core.paginator import Paginator
+from django.db import transaction
 from django.db.models import Case, F, FloatField, Value, When
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.views.decorators.http import require_http_methods
-from recipes.models import Recipe
+from recipes.models import Recipe, RecipeIngredient, Step
 
-from api.http import json_errors
+from api.http import json_body, json_errors, login_required_json
+from api.recipe_payload import parse_recipe_payload
 from api.serializers import recipe_card_to_dict, recipe_to_dict
 
 PAGE_SIZE = 24
@@ -60,8 +62,6 @@ def _filtered_recipes(params):
     return recipes.order_by(SORTS.get(params.get("sort"), SORTS["newest"]))
 
 
-@require_http_methods(["GET"])
-@json_errors
 def recipe_list(request):
     page = Paginator(_filtered_recipes(request.GET), PAGE_SIZE).get_page(request.GET.get("page"))
     return JsonResponse(
@@ -72,6 +72,41 @@ def recipe_list(request):
             "total": page.paginator.count,
         }
     )
+
+
+@login_required_json
+def recipe_create(request):
+    parsed = parse_recipe_payload(json_body(request))
+
+    with transaction.atomic():
+        recipe = Recipe.objects.create(owner=request.user, name=parsed.name)
+        recipe.tags.set(parsed.tags)
+        _replace_children(recipe, parsed)
+
+    recipe = _detail_queryset().get(pk=recipe.pk)
+    return JsonResponse({"recipe": recipe_to_dict(recipe, user=request.user)}, status=201)
+
+
+def _replace_children(recipe, parsed):
+    """Delete and rewrite a recipe's ingredients and steps. Shared by create and update."""
+    recipe.ingredients.all().delete()
+    recipe.steps.all().delete()
+    RecipeIngredient.objects.bulk_create(
+        RecipeIngredient(recipe=recipe, position=position, **row)
+        for position, row in enumerate(parsed.ingredients)
+    )
+    Step.objects.bulk_create(
+        Step(recipe=recipe, text=text, position=position)
+        for position, text in enumerate(parsed.steps)
+    )
+
+
+@require_http_methods(["GET", "POST"])
+@json_errors
+def recipe_collection(request):
+    if request.method == "GET":
+        return recipe_list(request)
+    return recipe_create(request)
 
 
 def _detail_queryset():
