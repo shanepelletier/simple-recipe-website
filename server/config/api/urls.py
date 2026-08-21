@@ -25,4 +25,5 @@ urlpatterns = [
         shopping.shopping_add_from_recipe,
         name="shopping-from-recipe",
     ),
+    path("shopping-list/<int:pk>/", shopping.shopping_resource, name="shopping-item"),
 ]

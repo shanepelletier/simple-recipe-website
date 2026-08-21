@@ -130,3 +130,71 @@ def test_two_recipes_sharing_an_ingredient_in_different_units_do_not_merge(
     auth_client.post(f"/api/shopping-list/from-recipe/{bowl.pk}/")
 
     assert ShoppingItem.objects.count() == 2
+
+
+@pytest.mark.django_db
+def test_checking_one_line_does_not_check_its_sibling(auth_client, reference):
+    beef = reference.ingredients["ground beef"]
+    add(auth_client, beef, reference.units["pound"], "1")
+    add(auth_client, beef, reference.units["cup"], "1")
+    first, second = ShoppingItem.objects.order_by("unit__name")
+
+    auth_client.patch(
+        f"/api/shopping-list/{first.pk}/",
+        data=json.dumps({"is_checked": True}),
+        content_type="application/json",
+    )
+
+    first.refresh_from_db()
+    second.refresh_from_db()
+    assert first.is_checked is True
+    assert second.is_checked is False
+
+
+@pytest.mark.django_db
+def test_setting_a_quantity_replaces_rather_than_adds(auth_client, reference):
+    add(auth_client, reference.ingredients["flour"], reference.units["cup"], "2")
+    item = ShoppingItem.objects.get()
+
+    auth_client.patch(
+        f"/api/shopping-list/{item.pk}/",
+        data=json.dumps({"quantity": "5"}),
+        content_type="application/json",
+    )
+
+    item.refresh_from_db()
+    assert item.quantity == Decimal("5")
+
+
+@pytest.mark.django_db
+def test_deleting_removes_only_that_row(auth_client, reference):
+    beef = reference.ingredients["ground beef"]
+    add(auth_client, beef, reference.units["pound"], "1")
+    add(auth_client, beef, reference.units["cup"], "1")
+    victim = ShoppingItem.objects.order_by("unit__name").first()
+
+    auth_client.delete(f"/api/shopping-list/{victim.pk}/")
+
+    assert ShoppingItem.objects.count() == 1
+
+
+@pytest.mark.django_db
+def test_you_cannot_touch_another_users_item(client, author, other_user, reference):
+    item = ShoppingItem.objects.create(
+        user=other_user,
+        ingredient=reference.ingredients["flour"],
+        unit=reference.units["cup"],
+        quantity=Decimal("1"),
+    )
+    client.force_login(author)
+
+    patched = client.patch(
+        f"/api/shopping-list/{item.pk}/",
+        data=json.dumps({"is_checked": True}),
+        content_type="application/json",
+    )
+
+    assert patched.status_code == 404
+    assert client.delete(f"/api/shopping-list/{item.pk}/").status_code == 404
+    item.refresh_from_db()
+    assert item.is_checked is False

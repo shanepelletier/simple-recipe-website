@@ -103,3 +103,41 @@ def shopping_add_from_recipe(request, pk):
             add_to_list(request.user, row.ingredient, row.unit, row.quantity, source_recipe=recipe)
 
     return shopping_list(request)
+
+
+@login_required_json
+def shopping_update(request, pk):
+    # filter(user=...) is the authorization check. A .get(pk=pk) here would
+    # let anyone edit anyone's list by guessing an id.
+    item = get_object_or_404(_user_items(request.user), pk=pk)
+    body = json_body(request)
+
+    if "is_checked" in body:
+        item.is_checked = bool(body["is_checked"])
+
+    if "quantity" in body:
+        quantity = _parse_quantity(body["quantity"])
+        if quantity is None:
+            return error(
+                "Enter a quantity.", fields={"quantity": ["Enter a number greater than zero."]}
+            )
+        item.quantity = quantity
+
+    item.save(update_fields=["is_checked", "quantity"])
+    return JsonResponse({"item": shopping_item_to_dict(item)})
+
+
+@login_required_json
+def shopping_delete(request, pk):
+    item = get_object_or_404(_user_items(request.user), pk=pk)
+    item.delete()
+    return JsonResponse({"deleted": True})
+
+
+@require_http_methods(["PATCH", "DELETE"])
+@json_errors
+@login_required_json
+def shopping_resource(request, pk):
+    if request.method == "PATCH":
+        return shopping_update(request, pk)
+    return shopping_delete(request, pk)
