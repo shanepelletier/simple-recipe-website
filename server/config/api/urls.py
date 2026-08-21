@@ -12,4 +12,5 @@ urlpatterns = [
     path("recipes/", recipes.recipe_collection, name="recipe-list"),
     path("recipes/<int:pk>/", recipes.recipe_resource, name="recipe-detail"),
     path("recipes/<int:pk>/photo/", recipes.recipe_photo, name="recipe-photo"),
+    path("recipes/<int:pk>/copy/", recipes.recipe_copy, name="recipe-copy"),
 ]

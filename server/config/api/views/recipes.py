@@ -1,3 +1,6 @@
+from pathlib import Path
+
+from django.core.files.base import ContentFile
 from django.core.paginator import Paginator
 from django.db import transaction
 from django.db.models import Case, F, FloatField, Value, When
@@ -209,3 +212,51 @@ def recipe_photo(request, pk):
         recipe.photo.storage.delete(old_name)
 
     return JsonResponse({"photo": recipe.photo.url})
+
+
+@require_http_methods(["POST"])
+@json_errors
+@login_required_json
+def recipe_copy(request, pk):
+    original = get_object_or_404(
+        Recipe.objects.select_related("owner").prefetch_related(
+            "tags", "steps", "ingredients__ingredient", "ingredients__unit"
+        ),
+        pk=pk,
+    )
+
+    with transaction.atomic():
+        copy = Recipe.objects.create(
+            owner=request.user,
+            name=original.name,
+            copied_from=original,
+            # Stored separately so attribution survives the original being
+            # deleted — copied_from goes null, this does not.
+            copied_from_username=original.owner.username,
+        )
+        copy.tags.set(original.tags.all())
+        RecipeIngredient.objects.bulk_create(
+            RecipeIngredient(
+                recipe=copy,
+                ingredient=row.ingredient,
+                unit=row.unit,
+                quantity=row.quantity,
+                position=row.position,
+            )
+            for row in original.ingredients.all()
+        )
+        Step.objects.bulk_create(
+            Step(recipe=copy, text=step.text, position=step.position)
+            for step in original.steps.all()
+        )
+
+        if original.photo:
+            # Copy the file itself, never share the path: deleting the
+            # original must not blank out the copy's image.
+            with original.photo.open("rb") as handle:
+                copy.photo.save(
+                    Path(original.photo.name).name, ContentFile(handle.read()), save=True
+                )
+
+    copy = _detail_queryset().get(pk=copy.pk)
+    return JsonResponse({"recipe": recipe_to_dict(copy, user=request.user)}, status=201)
