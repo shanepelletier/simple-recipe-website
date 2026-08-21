@@ -162,9 +162,21 @@ def recipe_update(request, pk):
     return JsonResponse({"recipe": recipe_to_dict(recipe, user=request.user)})
 
 
-@require_http_methods(["GET", "PATCH"])
+@login_required_json
+def recipe_delete(request, pk):
+    recipe = get_object_or_404(Recipe, pk=pk)
+    if not can_edit_recipe(request.user, recipe):
+        return error("You can only delete your own recipes.", status=403)
+
+    recipe.delete()
+    return JsonResponse({"deleted": True})
+
+
+@require_http_methods(["GET", "PATCH", "DELETE"])
 @json_errors
 def recipe_resource(request, pk):
     if request.method == "GET":
         return recipe_detail(request, pk)
-    return recipe_update(request, pk)
+    if request.method == "PATCH":
+        return recipe_update(request, pk)
+    return recipe_delete(request, pk)
