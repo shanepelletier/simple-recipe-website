@@ -1,9 +1,12 @@
+from io import BytesIO
 from types import SimpleNamespace
 from unittest.mock import MagicMock
 
 import pytest
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.core.files.uploadedfile import SimpleUploadedFile
+from PIL import Image
 
 from recipes.photos import delete_photo_file, upload_to, validate_image
 
@@ -28,8 +31,18 @@ def test_upload_to_produces_unique_names():
 
 
 def test_validate_image_accepts_allowed_extension_under_size_limit():
-    file = SimpleNamespace(size=1024, name="photo.jpg")
+    buffer = BytesIO()
+    Image.new("RGB", (10, 10)).save(buffer, format="JPEG")
+    file = SimpleUploadedFile("photo.jpg", buffer.getvalue(), content_type="image/jpeg")
+
     validate_image(file)  # does not raise
+
+
+def test_validate_image_rejects_a_file_pillow_cannot_open():
+    file = SimpleUploadedFile("photo.jpg", b"not actually an image", content_type="image/jpeg")
+
+    with pytest.raises(ValidationError):
+        validate_image(file)
 
 
 def test_validate_image_rejects_oversized_file():

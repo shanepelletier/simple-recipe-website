@@ -180,3 +180,32 @@ def recipe_resource(request, pk):
     if request.method == "PATCH":
         return recipe_update(request, pk)
     return recipe_delete(request, pk)
+
+
+@require_http_methods(["POST"])
+@json_errors
+@login_required_json
+def recipe_photo(request, pk):
+    recipe = get_object_or_404(Recipe, pk=pk)
+    if not can_edit_recipe(request.user, recipe):
+        return error("You can only change your own recipes.", status=403)
+
+    upload = request.FILES.get("photo")
+    if upload is None:
+        return error("Choose an image.", fields={"photo": ["Choose an image."]})
+
+    # Capture the old path BEFORE assigning the new file, or it is unreachable.
+    old_name = recipe.photo.name or None
+
+    recipe.photo = upload
+    # full_clean runs validate_image: size cap, extension allowlist, and an
+    # explicit Image.open(...).verify() (recipes/photos.py) — ImageField's
+    # own Pillow check only fires through a ModelForm or width_field/
+    # height_field, neither of which this project uses.
+    recipe.full_clean()
+    recipe.save()
+
+    if old_name:
+        recipe.photo.storage.delete(old_name)
+
+    return JsonResponse({"photo": recipe.photo.url})
