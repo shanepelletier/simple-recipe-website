@@ -1,6 +1,6 @@
 from django.urls import path
 
-from .views import auth, recipes, reviews
+from .views import auth, comments, recipes, reviews
 
 app_name = "api"
 
@@ -14,4 +14,6 @@ urlpatterns = [
     path("recipes/<int:pk>/photo/", recipes.recipe_photo, name="recipe-photo"),
     path("recipes/<int:pk>/copy/", recipes.recipe_copy, name="recipe-copy"),
     path("recipes/<int:pk>/review/", reviews.review_resource, name="recipe-review"),
+    path("recipes/<int:pk>/comments/", comments.comment_collection, name="recipe-comments"),
+    path("comments/<int:pk>/", comments.comment_delete, name="comment-detail"),
 ]

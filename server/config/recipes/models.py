@@ -1,6 +1,6 @@
 from django.conf import settings
 from django.core.exceptions import ValidationError
-from django.core.validators import MaxValueValidator, MinValueValidator
+from django.core.validators import MaxLengthValidator, MaxValueValidator, MinValueValidator
 from django.db import models
 from django.db.models.signals import post_delete
 
@@ -192,7 +192,12 @@ class Review(models.Model):
 class Comment(models.Model):
     recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE, related_name="comments")
     author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    body = models.TextField(max_length=2000)
+    # TextField.max_length only feeds a ModelForm's widget — it is NOT
+    # enforced by full_clean() the way CharField's max_length is (CharField
+    # appends a MaxLengthValidator in __init__; TextField does not). This
+    # project never goes through a ModelForm, so the explicit validator
+    # below is what actually makes the 2000-character cap real.
+    body = models.TextField(max_length=2000, validators=[MaxLengthValidator(2000)])
     photo = models.ImageField(
         upload_to=upload_to, null=True, blank=True, validators=[validate_image]
     )
