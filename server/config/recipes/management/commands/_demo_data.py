@@ -7,7 +7,9 @@ explicitly instead of guessing by name, which breaks silently if a name
 ever changes or repeats.
 """
 
-# Each ingredient is (quantity, unit name, ingredient name).
+# Each ingredient is (quantity, unit name, ingredient name). "photo" defaults
+# to True — set it False for the couple of recipes that deliberately go
+# without one, exercising the missing-photo UI state.
 DEMO_RECIPES = [
     {
         "key": "chili",
@@ -47,6 +49,7 @@ DEMO_RECIPES = [
             "Assemble with cheese, tomato, and a squeeze of lime.",
         ],
         "tags": ["quick"],
+        "photo": False,
     },
     {
         "key": "pasta",
@@ -143,6 +146,7 @@ DEMO_RECIPES = [
             "Blend until smooth and stir in the basil.",
         ],
         "tags": ["vegan", "vegetarian", "gluten-free"],
+        "photo": False,
     },
     {
         "key": "breakfast_skillet",
@@ -194,10 +198,24 @@ DEMO_REVIEWS = [
     ("lemon_chicken", "moderator", 4),
 ]
 
-# Comments as (recipe key, author username, body). Photo-bearing comments
-# are added on top of these once seed images exist.
+# A deliberate mix of comments with and without a photo attached.
 DEMO_COMMENTS = [
-    ("chili", "bob", "Made this last night, the spice level is perfect."),
-    ("chili", "moderator", "Great weeknight dinner, will make again."),
-    ("lemon_chicken", "bob", "Came out juicy every time I've made it."),
+    {
+        "recipe": "chili",
+        "author": "bob",
+        "body": "Made this last night, the spice level is perfect.",
+        "photo": True,
+    },
+    {
+        "recipe": "chili",
+        "author": "moderator",
+        "body": "Great weeknight dinner, will make again.",
+        "photo": False,
+    },
+    {
+        "recipe": "lemon_chicken",
+        "author": "bob",
+        "body": "Came out juicy every time I've made it.",
+        "photo": False,
+    },
 ]

@@ -1,16 +1,38 @@
 from decimal import Decimal
+from io import BytesIO
+from uuid import uuid4
 
 from accounts.models import User
 from django.contrib.auth.models import Group, Permission
+from django.core.files.base import ContentFile
 from django.core.management import call_command
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
+from PIL import Image, ImageDraw
 
 from recipes.models import Comment, Ingredient, Recipe, RecipeIngredient, Review, Step, Tag, Unit
 
 from ._demo_data import DEMO_COMMENTS, DEMO_RECIPES, DEMO_REVIEWS
 
 DEMO_PASSWORD = "demo-password-123"
+
+# Cycled by index so every recipe gets a distinct-ish placeholder colour.
+PHOTO_COLOURS = [
+    (196, 90, 60),
+    (60, 130, 110),
+    (70, 100, 170),
+    (180, 140, 50),
+    (140, 70, 150),
+]
+COMMENT_PHOTO_COLOUR = (90, 90, 90)
+
+
+def make_image(text: str, colour: tuple[int, int, int]) -> ContentFile:
+    image = Image.new("RGB", (800, 600), colour)
+    ImageDraw.Draw(image).text((40, 280), text, fill=(255, 255, 255))
+    buffer = BytesIO()
+    image.save(buffer, format="JPEG", quality=80)
+    return ContentFile(buffer.getvalue(), name=f"{uuid4().hex}.jpg")
 
 
 class Command(BaseCommand):
@@ -107,11 +129,15 @@ class Command(BaseCommand):
 
     def _seed_recipes(self, users, units, ingredients):
         by_key = {}
-        for spec in DEMO_RECIPES:
+        for position, spec in enumerate(DEMO_RECIPES):
+            photo = ""
+            if spec.get("photo", True):
+                photo = make_image(spec["name"], PHOTO_COLOURS[position % len(PHOTO_COLOURS)])
             recipe = Recipe.objects.create(
                 owner=users[spec["owner"]],
                 name=spec["name"],
                 copied_from_username=spec.get("copied_from_username", ""),
+                photo=photo,
             )
             recipe.tags.set(Tag.objects.filter(name__in=spec["tags"]))
             RecipeIngredient.objects.bulk_create(
@@ -154,8 +180,13 @@ class Command(BaseCommand):
             recipe.save(update_fields=["rating_sum", "rating_count"])
 
     def _seed_comments(self, users, recipes):
-        # Photo-bearing comments are added on top of these once seed images exist.
-        Comment.objects.bulk_create(
-            Comment(recipe=recipes[key], author=users[username], body=body)
-            for key, username, body in DEMO_COMMENTS
-        )
+        for spec in DEMO_COMMENTS:
+            photo = ""
+            if spec["photo"]:
+                photo = make_image(f"{spec['author']}'s photo", COMMENT_PHOTO_COLOUR)
+            Comment.objects.create(
+                recipe=recipes[spec["recipe"]],
+                author=users[spec["author"]],
+                body=spec["body"],
+                photo=photo,
+            )

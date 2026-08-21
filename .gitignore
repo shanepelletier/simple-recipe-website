@@ -11,3 +11,6 @@ wheels/
 
 # Secrets/config
 .env
+
+# User-uploaded and generated media
+server/config/media/
