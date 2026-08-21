@@ -8,3 +8,5 @@
 - Each ingredient and unit has its plural form explicitly stored, rather than pulling in a separate package to pluralize.
 - Use `ruff` for code formatting. The alternative of using `black` would almost definitely work here too, but in larger projects I've seen `black` take significant time just to format.
 - Use `mypy` for type checking, with `django-stubs` along with the `mypy` plugin. Other type checkers would theoretically be faster, but `django-stubs` only has basic support for them and this project isn't going to be large enough to require the speed.
+- Mix testing and local development credentials in a single `.env` file. While separating out these credentials would be ideal (especially when eventually deploying to production), the current setup using Docker Compose only reads in the single `.env` file and so the test credentials need to be present in `.env` anyway. This needs to be revisited if the application is every deployed to production.
+- Images are stored in the `media/` subdirectory of the Django project. They should be stored elsewhere (possibly not even on the same machine as the Django server) in production.
