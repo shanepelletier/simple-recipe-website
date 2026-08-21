@@ -1,6 +1,6 @@
 from django.urls import path
 
-from .views import auth
+from .views import auth, recipes
 
 app_name = "api"
 
@@ -9,4 +9,5 @@ urlpatterns = [
     path("auth/login/", auth.log_in, name="login"),
     path("auth/logout/", auth.log_out, name="logout"),
     path("auth/me/", auth.me, name="me"),
+    path("recipes/", recipes.recipe_list, name="recipe-list"),
 ]
