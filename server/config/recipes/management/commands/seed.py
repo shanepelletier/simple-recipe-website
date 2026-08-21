@@ -12,7 +12,17 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from PIL import Image, ImageDraw
 
-from recipes.models import Comment, Ingredient, Recipe, RecipeIngredient, Review, Step, Tag, Unit
+from recipes.models import (
+    Comment,
+    Ingredient,
+    Recipe,
+    RecipeIngredient,
+    Review,
+    ShoppingItem,
+    Step,
+    Tag,
+    Unit,
+)
 
 from ._bulk_data import BULK_ADJECTIVES, BULK_NOUNS
 from ._demo_data import DEMO_COMMENTS, DEMO_RECIPES, DEMO_REVIEWS
@@ -68,6 +78,13 @@ class Command(BaseCommand):
 
     def _flush(self):
         self.stdout.write("Flushing existing recipe data...")
+        # ShoppingItem.source_recipe is SET_NULL, not CASCADE — deleting
+        # recipes below leaves shopping list rows behind on purpose (a user
+        # still needs to buy the beef). But ShoppingItem.ingredient/unit are
+        # PROTECTed, so those rows have to go before Ingredient/Unit can be
+        # deleted, or --flush fails the moment the shopping list has ever
+        # been used against this database.
+        ShoppingItem.objects.all().delete()
         # Cascades away RecipeIngredient, Step, Review, Comment, and the tags M2M.
         Recipe.objects.all().delete()
         # Ingredient/Unit are PROTECTed by RecipeIngredient, so this only
