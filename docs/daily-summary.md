@@ -1,0 +1,15 @@
+# August 18th, 2026
+
+Started the project. Began by making some basic decisions regarding deployment (decided to use Docker Compose) and ended the day by being able to deploy PostgreSQL. Learned about the `shm_size` setting for the Postgres image and what Postgres uses `/dev/shm` for (parallel queries).
+
+# August 19th, 2026
+
+Setup Django and connected it to the Postgres DB. Learned about the `pg_isready` command and the default timeouts associated with it. Ended the day with being about to run `docker compose up` to deploy both Postgres and the application.
+
+# August 20th, 2026
+
+Began using Claude Code more heavily to make major contributions. Began by fixing `uv run` by marking the project as a non-package so `uv` would stop trying to build the application as a Python package. Began adding the necessary ORM models for the application.
+
+# August 21st, 2026
+
+Finished adding ORM models and developing the backend API. Finally told Claude to actually write full commit messages instead of just one-liners that didn't explain why anything was being done. Also made some more design/engineering decisions and extended the pre-commit hooks.
