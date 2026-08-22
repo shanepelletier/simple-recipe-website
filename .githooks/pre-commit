@@ -1,17 +1,37 @@
 #!/bin/sh
-# Blocks the commit if the Django project fails ruff lint/format, mypy, or
-# the test suite.
+# Blocks the commit if the code being committed fails its checks: ruff
+# lint/format, mypy, and the test suite for the Django project.
 #
 # Activate once per clone with:
 #   git config core.hooksPath .githooks
 
 set -e
 
-cd "$(git rev-parse --show-toplevel)/server"
+root="$(git rev-parse --show-toplevel)"
+staged="$(git diff --cached --name-only)"
 
-uv run ruff check .
-uv run ruff format --check .
-# The django-stubs mypy plugin and pytest-django both initialize real
-# Django settings, so they need the same env vars the app runs with.
-uv run --env-file ../.env mypy config
-uv run --env-file ../.env pytest
+# Each half of the repo is checked only when that half is actually being
+# committed. The Python suite is about a minute, which is a long time to be
+# told that a stylesheet is fine. Deletions are deliberately not filtered out
+# of `staged` — removing a module is exactly the kind of change that breaks
+# the suite.
+#
+# Commit with PRECOMMIT_ALL=1 to run everything regardless of what is staged.
+staged_in() {
+  if [ -n "$PRECOMMIT_ALL" ]; then
+    return 0
+  fi
+  printf '%s\n' "$staged" | grep -q "^$1/"
+}
+
+if staged_in server; then
+  cd "$root/server"
+  uv run ruff check .
+  uv run ruff format --check .
+  # The django-stubs mypy plugin and pytest-django both initialize real
+  # Django settings, so they need the same env vars the app runs with.
+  uv run --env-file ../.env mypy config
+  uv run --env-file ../.env pytest
+else
+  echo "pre-commit: nothing staged under server/, skipping the Python checks"
+fi
