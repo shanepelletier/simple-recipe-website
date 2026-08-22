@@ -1,6 +1,6 @@
 # A simple recipe website
 
-This is a simple recipe website built using Django, PostgreSQL, and Angular.
+This is a simple recipe website built using Django, PostgreSQL, and React.
 
 # Setup
 
