@@ -10,6 +10,12 @@
   --social-bg: rgba(244, 243, 236, 0.5);
   --shadow: rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
 
+  /* Two rating layers that are meant to overlap. The user's own colour
+     carries alpha on purpose, so a star carrying both reads as a third tone
+     rather than hiding the average underneath it. */
+  --rating-average: #e0a800;
+  --rating-user: rgb(170 59 255 / 65%);
+
   --sans: system-ui, "Segoe UI", Roboto, sans-serif;
   --heading: system-ui, "Segoe UI", Roboto, sans-serif;
   --mono: ui-monospace, Consolas, monospace;
@@ -41,6 +47,8 @@
     --accent-border: rgba(192, 132, 252, 0.5);
     --social-bg: rgba(47, 48, 58, 0.5);
     --shadow: rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
+    --rating-average: #f0c040;
+    --rating-user: rgb(192 132 252 / 65%);
   }
 }
 
@@ -230,4 +238,74 @@ code {
   align-items: center;
   gap: 12px;
   margin: 24px 0;
+}
+
+/* --- rating widget --- */
+
+.rating__stars {
+  position: relative;
+  display: inline-flex;
+  line-height: 1;
+  font-size: 28px;
+}
+
+/* Every star occupies the same box in all three layers, which is what keeps
+   them registered on top of each other.
+
+   `flex: none` is load-bearing, not tidiness. The average layer is narrower
+   than the row on purpose, and without this its five stars shrink to fit that
+   width instead of overflowing it — so the layer renders five squashed stars
+   rather than being clipped mid-star, and stops lining up with the two layers
+   underneath. It looks almost right, which is worse. */
+.star {
+  display: inline-flex;
+  justify-content: center;
+  flex: none;
+  width: 1.15em;
+}
+
+.rating__track {
+  display: inline-flex;
+  color: var(--border);
+}
+
+.rating__average,
+.rating__user {
+  position: absolute;
+  inset: 0;
+  display: inline-flex;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+/* Width is set inline as a percentage of the row, so a 4.5 average draws four
+   and a half stars rather than rounding to something the number beside it
+   contradicts. */
+.rating__average {
+  color: var(--rating-average);
+  pointer-events: none;
+}
+
+.star--button {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  cursor: pointer;
+  /* Transparent rather than absent: an unrated star still has to occupy its
+     box, or the three layers stop lining up. */
+  color: transparent;
+}
+
+.star--button:disabled {
+  cursor: progress;
+}
+
+.star--user {
+  color: var(--rating-user);
+}
+
+.rating__summary {
+  font-size: 15px;
+  margin-top: 4px;
 }

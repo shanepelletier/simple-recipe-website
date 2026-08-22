@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 
+import { RatingWidget } from "../components/RatingWidget";
 import * as api from "../core/api";
 import { useAuth } from "../core/auth-context";
 import { asApiError } from "../core/client";
-import type { Recipe } from "../core/models";
+import type { RatingResponse, Recipe } from "../core/models";
 import { useApi } from "../core/useApi";
 
 export default function RecipeDetail() {
@@ -13,7 +14,7 @@ export default function RecipeDetail() {
   // beats sprinkling Number(id) through the file.
   const recipeId = Number(id);
 
-  const { data, loading, error } = useApi(() => api.recipe(recipeId), [recipeId]);
+  const { data, loading, error, setData } = useApi(() => api.recipe(recipeId), [recipeId]);
 
   if (loading) {
     return <p>Loading recipe…</p>;
@@ -31,10 +32,27 @@ export default function RecipeDetail() {
     return null;
   }
 
-  return <Loaded recipe={data.recipe} />;
+  // Captured after the null check, because the closure below outlives this
+  // render and TypeScript will not carry the narrowing into it.
+  const recipe = data.recipe;
+
+  // The page owns the Recipe, so folding a rating response back into it
+  // happens here rather than in the widget. Everything the response carries is
+  // the server's own arithmetic; none of it is recomputed.
+  const onRated = (response: RatingResponse) =>
+    setData({
+      recipe: {
+        ...recipe,
+        user_rating: response.rating,
+        rating: response.recipe.rating,
+        rating_count: response.recipe.rating_count,
+      },
+    });
+
+  return <Loaded recipe={recipe} onRated={onRated} />;
 }
 
-function Loaded({ recipe }: { recipe: Recipe }) {
+function Loaded({ recipe, onRated }: { recipe: Recipe; onRated: (r: RatingResponse) => void }) {
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -101,10 +119,13 @@ function Loaded({ recipe }: { recipe: Recipe }) {
       <h1>{recipe.name}</h1>
       <p>by {recipe.owner}</p>
 
-      {/* Explicit null test, not truthiness — see the recipe card. */}
-      <p>
-        {recipe.rating === null ? "Not yet rated" : `★ ${recipe.rating} (${recipe.rating_count})`}
-      </p>
+      <RatingWidget
+        recipeId={recipe.id}
+        average={recipe.rating}
+        count={recipe.rating_count}
+        userRating={recipe.user_rating}
+        onRated={onRated}
+      />
 
       {recipe.copied_from_username !== "" && (
         <p>
