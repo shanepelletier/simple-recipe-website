@@ -1,7 +1,7 @@
 #!/bin/sh
 # Blocks the commit if the code being committed fails its checks: ruff
-# lint/format, mypy, and the test suite for the Django project; oxfmt for the
-# client.
+# lint/format, mypy, and the test suite for the Django project; oxfmt, tsc,
+# oxlint, and vitest for the client.
 #
 # Activate once per clone with:
 #   git config core.hooksPath .githooks
@@ -45,6 +45,9 @@ if staged_in client; then
   # `npm install` yet, most obviously.
   if [ -d node_modules ]; then
     npm run format:check
+    npm run typecheck
+    npm run lint
+    npm run test
   else
     echo "pre-commit: skipping client checks (run 'npm install' in client/ first)"
   fi
