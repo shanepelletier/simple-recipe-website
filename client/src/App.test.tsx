@@ -66,24 +66,24 @@ describe("routes", () => {
 
     // By heading, not by text: the login page's submit button also says
     // "Sign in", and so does a link in the header.
-    expect(await page().findByRole("heading", { name: "Sign in" })).toBeDefined();
+    expect(await page().findByRole("heading", { level: 1, name: "Sign in" })).toBeDefined();
   });
 
   // And without this, guarding everything unconditionally would pass both.
   //
-  // Asserted against the page's heading rather than its text, so this keeps
-  // working as each page grows past its stub: every page has exactly one <h1>,
-  // and the only thing that matters here is that it isn't the login page's.
+  // Asserted against the page's <h1> rather than its text, so this keeps
+  // working as each page grows past its stub. Level 1 specifically: pages with
+  // sections have <h2>s too, and "the heading" stops being unambiguous.
   it.for(guardedRoutes)("$path lets a signed-in user through", async ({ path }) => {
     renderAt(withParams(path), signedIn);
 
-    expect((await page().findByRole("heading")).textContent).not.toBe("Sign in");
+    expect((await page().findByRole("heading", { level: 1 })).textContent).not.toBe("Sign in");
   });
 
   it("sends an unknown path to the grid", async () => {
     renderAt("/nonsense", signedOut);
 
-    expect((await page().findByRole("heading")).textContent).toBe("Recipes");
+    expect((await page().findByRole("heading", { level: 1 })).textContent).toBe("Recipes");
   });
 
   it("renders nothing at all until the session check has answered", () => {
