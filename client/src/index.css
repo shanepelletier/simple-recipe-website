@@ -309,3 +309,28 @@ code {
   font-size: 15px;
   margin-top: 4px;
 }
+
+/* --- comments --- */
+
+.comments {
+  list-style: none;
+  padding: 0;
+  margin: 16px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.comment {
+  border-top: 1px solid var(--border);
+  padding-top: 16px;
+}
+
+.comment__photo {
+  display: block;
+  max-width: 240px;
+  max-height: 240px;
+  object-fit: cover;
+  border-radius: 6px;
+  margin: 8px 0;
+}

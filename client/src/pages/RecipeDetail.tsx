@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 
+import { CommentList } from "../components/CommentList";
 import { RatingWidget } from "../components/RatingWidget";
 import * as api from "../core/api";
 import { useAuth } from "../core/auth-context";
@@ -195,6 +196,8 @@ function Loaded({ recipe, onRated }: { recipe: Recipe; onRated: (r: RatingRespon
           Added to your <Link to="/shopping-list">shopping list</Link>.
         </p>
       )}
+
+      <CommentList recipeId={recipe.id} />
     </article>
   );
 }
