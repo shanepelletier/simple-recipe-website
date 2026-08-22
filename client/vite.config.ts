@@ -1,5 +1,5 @@
-import react from '@vitejs/plugin-react'
-import { defineConfig } from 'vite'
+import react from "@vitejs/plugin-react";
+import { defineConfig } from "vite";
 
 export default defineConfig({
   plugins: [react()],
@@ -11,8 +11,8 @@ export default defineConfig({
       // /media matters as much as /api: uploaded photos are served from
       // /media/recipes/<uuid>.jpg, and without this line every image 404s
       // while the JSON works perfectly.
-      '/api': { target: 'http://localhost:8000' },
-      '/media': { target: 'http://localhost:8000' },
+      "/api": { target: "http://localhost:8000" },
+      "/media": { target: "http://localhost:8000" },
     },
   },
-})
+});

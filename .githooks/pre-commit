@@ -1,6 +1,7 @@
 #!/bin/sh
 # Blocks the commit if the code being committed fails its checks: ruff
-# lint/format, mypy, and the test suite for the Django project.
+# lint/format, mypy, and the test suite for the Django project; oxfmt for the
+# client.
 #
 # Activate once per clone with:
 #   git config core.hooksPath .githooks
@@ -34,4 +35,19 @@ if staged_in server; then
   uv run --env-file ../.env pytest
 else
   echo "pre-commit: nothing staged under server/, skipping the Python checks"
+fi
+
+if staged_in client; then
+  cd "$root/client"
+
+  # Skipped when dependencies aren't installed, so the hook never fails for a
+  # reason the committer can do nothing about — a fresh clone that hasn't run
+  # `npm install` yet, most obviously.
+  if [ -d node_modules ]; then
+    npm run format:check
+  else
+    echo "pre-commit: skipping client checks (run 'npm install' in client/ first)"
+  fi
+else
+  echo "pre-commit: nothing staged under client/, skipping the client checks"
 fi
