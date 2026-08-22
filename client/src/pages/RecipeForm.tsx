@@ -1,11 +1,12 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { SubmitEvent } from "react";
-import { useNavigate, useParams } from "react-router";
+import { Link, useNavigate, useParams } from "react-router";
 
 import { QuantityInput } from "../components/QuantityInput";
 import * as api from "../core/api";
 import { asApiError } from "../core/client";
 import type { Recipe, Tag, UnitGroup } from "../core/models";
+import { PHOTO_ACCEPT, photoProblem } from "../core/photos";
 import {
   blankIngredient,
   blankStep,
@@ -95,10 +96,66 @@ function Editor({
   const [steps, setSteps] = useState<StepRow[]>(
     recipe === null ? [blankStep()] : stepsFromRecipe(recipe),
   );
+  const [photo, setPhoto] = useState<{ file: File; url: string } | null>(null);
+  const [photoError, setPhotoError] = useState("");
   const [errors, setErrors] = useState<Record<string, string[]>>({});
   const [formError, setFormError] = useState("");
   const [conflict, setConflict] = useState(false);
   const [saving, setSaving] = useState(false);
+  // The recipe as the server last returned it, which is null until the first
+  // successful save. Only reachable on screen when the photo then failed:
+  // every other successful save leaves for the recipe page.
+  const [saved, setSaved] = useState<Recipe | null>(null);
+  // Clearing the photo state does not clear the input, which keeps showing the
+  // old filename until its value is reset by hand.
+  const fileInput = useRef<HTMLInputElement>(null);
+
+  // What a save will act on. After a create whose photo upload failed, that is
+  // the recipe that now exists — so pressing Save again updates it instead of
+  // creating a second copy of the same recipe.
+  const target = saved ?? recipe;
+  const storedPhoto = target?.photo ?? null;
+  const savedWithoutPhoto = saved !== null && photoError !== "";
+
+  // A blob URL lives until it is revoked, so the previous one is released
+  // whenever the choice changes. Doing it here rather than in an effect keeps
+  // the object URL out of the render cycle entirely.
+  function choosePhoto(file: File | null) {
+    if (photo !== null) {
+      URL.revokeObjectURL(photo.url);
+    }
+    setPhotoError("");
+
+    const problem = file === null ? null : photoProblem(file);
+    if (problem !== null) {
+      setPhotoError(problem);
+      setPhoto(null);
+      resetFileInput();
+      return;
+    }
+
+    setPhoto(file === null ? null : { file, url: URL.createObjectURL(file) });
+  }
+
+  function resetFileInput() {
+    if (fileInput.current !== null) {
+      fileInput.current.value = "";
+    }
+  }
+
+  function clearPhoto() {
+    choosePhoto(null);
+    resetFileInput();
+  }
+
+  /** The preview failed to decode, so the file is not the image its name
+   *  claims. The server's third check is exactly this — Pillow opening the
+   *  file — and the browser has already done the work by the time the preview
+   *  breaks, so there is no reason to save first and find out afterwards. */
+  function rejectUndecodablePhoto() {
+    clearPhoto();
+    setPhotoError("Upload a valid image file.");
+  }
 
   function toggleTag(tagId: number) {
     setSelectedTags((current) =>
@@ -132,6 +189,7 @@ function Editor({
     setSaving(true);
     setErrors({});
     setFormError("");
+    setPhotoError("");
     setConflict(false);
 
     const body = toRecipeBody(name.trim(), selectedTags, ready, written);
@@ -140,16 +198,35 @@ function Editor({
       // Branching on the recipe rather than on an id kept alongside it: the
       // id and the version are either both present or both absent, so there is
       // no state where one has to be invented.
-      const { recipe: saved } =
-        recipe === null
+      const { recipe: stored } =
+        target === null
           ? await api.createRecipe(body)
-          : await api.updateRecipe(recipe.id, {
+          : await api.updateRecipe(target.id, {
               ...body,
               // Sending back the version this form was loaded against is what
               // lets the server tell "nobody touched it" from "someone did".
-              version: recipe.version,
+              version: target.version,
             });
-      navigate(`/recipes/${saved.id}`);
+      setSaved(stored);
+
+      if (photo !== null) {
+        // The photo has its own endpoint, so it can only go up once the recipe
+        // has an id — and its own try, because by this point the recipe is
+        // safely stored. Reporting a refused photo as a failed save would send
+        // the user back to retype work the server already has.
+        try {
+          await api.uploadRecipePhoto(stored.id, photo.file);
+        } catch (reason) {
+          const failure = asApiError(reason);
+          // The reason is in fields.photo: model validation answers with the
+          // generic "Please correct the errors below." at the top level, which
+          // says nothing beside a panel that already announces the failure.
+          setPhotoError(failure.fields.photo?.join(" ") ?? failure.message);
+          return;
+        }
+      }
+
+      navigate(`/recipes/${stored.id}`);
     } catch (reason) {
       const failure = asApiError(reason);
       if (failure.status === 409) {
@@ -169,7 +246,9 @@ function Editor({
 
   return (
     <form onSubmit={onSubmit}>
-      <h1>{recipe === null ? "New recipe" : `Edit ${recipe.name}`}</h1>
+      {/* From the same expression the save branches on, so the heading cannot
+          claim this is still a new recipe once one has been created. */}
+      <h1>{target === null ? "New recipe" : `Edit ${target.name}`}</h1>
 
       {/* The visible payoff of the optimistic locking, so it reads as a
           designed state rather than a generic failure. The typed values stay
@@ -188,6 +267,20 @@ function Editor({
         </div>
       )}
 
+      {/* Two things happened and only one of them failed, so the panel has to
+          say both. Left as a plain "couldn't save", the user reasonably
+          concludes their recipe is gone and types it again. */}
+      {savedWithoutPhoto && (
+        <div className="notice" role="alert">
+          <h2>Recipe saved, but the photo didn&rsquo;t upload</h2>
+          <p>{photoError}</p>
+          <p>
+            Choose another photo and save again, or{" "}
+            <Link to={`/recipes/${saved.id}`}>go to the recipe</Link> without one.
+          </p>
+        </div>
+      )}
+
       {formError !== "" && <p role="alert">{formError}</p>}
 
       <label>
@@ -195,6 +288,45 @@ function Editor({
         <input value={name} onChange={(event) => setName(event.target.value)} />
       </label>
       <FieldErrors messages={errors.name} />
+
+      <h2>Photo</h2>
+      {/* One photo on screen at a time: a new choice replaces the stored one
+          in the preview, because that is what saving is about to do. */}
+      {photo !== null ? (
+        <img
+          className="form__photo"
+          src={photo.url}
+          alt="Selected photo"
+          onError={rejectUndecodablePhoto}
+        />
+      ) : (
+        storedPhoto !== null && (
+          <img className="form__photo" src={storedPhoto} alt="Current photo" />
+        )
+      )}
+      <div className="detail__actions">
+        <label>
+          {storedPhoto === null ? "Add a photo" : "Replace photo"}
+          <input
+            ref={fileInput}
+            type="file"
+            accept={PHOTO_ACCEPT}
+            onChange={(event) => choosePhoto(event.target.files?.[0] ?? null)}
+          />
+        </label>
+        {photo !== null && (
+          <button type="button" onClick={clearPhoto}>
+            {/* Not "Remove" once a photo is stored: no endpoint deletes one, so
+                that label would promise something the app cannot do. All this
+                can undo is the choice. */}
+            {storedPhoto === null ? "Remove" : "Keep the current photo"}
+          </button>
+        )}
+      </div>
+      {/* Only when the panel above isn't already carrying the same sentence. */}
+      {!savedWithoutPhoto && (
+        <FieldErrors messages={photoError === "" ? undefined : [photoError]} />
+      )}
 
       <h2>Ingredients</h2>
       {/* A list, one message per bad row, so a five-ingredient recipe says

@@ -430,9 +430,21 @@ code {
   margin: 8px 0 24px;
 }
 
-/* --- edit conflict --- */
+.form__photo {
+  display: block;
+  max-width: 320px;
+  border-radius: 8px;
+  margin: 8px 0;
+}
 
-.conflict {
+/* --- a save that only partly landed --- */
+
+/* Two of them: someone else's edit won, or the recipe saved and its photo
+   didn't. Both interrupt the same way — the form is still there, still holding
+   what was typed, and the user has to choose what happens next — so they are
+   deliberately the same panel rather than two competing looks. */
+.conflict,
+.notice {
   border: 1px solid var(--accent-border);
   background: var(--accent-bg);
   border-radius: 8px;
@@ -444,7 +456,8 @@ code {
   gap: 8px;
 }
 
-.conflict h2 {
+.conflict h2,
+.notice h2 {
   margin: 0;
 }
 
