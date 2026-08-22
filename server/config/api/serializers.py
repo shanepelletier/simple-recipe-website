@@ -1,4 +1,5 @@
 from recipes.format import format_quantity, trim
+from recipes.models import Review
 from recipes.permissions import can_delete_comment, can_edit_recipe
 
 
@@ -75,7 +76,21 @@ def recipe_to_dict(recipe, user=None):
         "copied_from_username": recipe.copied_from_username,
         "updated_at": recipe.updated_at.isoformat(),
         "can_edit": can_edit_recipe(user, recipe) if user is not None else False,
+        "user_rating": _user_rating(recipe, user),
     }
+
+
+def _user_rating(recipe, user):
+    """The signed-in user's own rating, or None if they haven't rated it.
+
+    None is also the answer for anonymous readers, which is why the
+    is_authenticated check comes first — AnonymousUser has no pk to filter on.
+    Skipping the query entirely for them is also what keeps the detail
+    endpoint's query-count guard at the number it was written against.
+    """
+    if user is None or not user.is_authenticated:
+        return None
+    return Review.objects.filter(recipe=recipe, user=user).values_list("rating", flat=True).first()
 
 
 def review_to_dict(review):

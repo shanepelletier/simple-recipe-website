@@ -1,4 +1,7 @@
+import json
+
 import pytest
+from recipes.models import Review
 
 
 @pytest.mark.django_db
@@ -37,6 +40,43 @@ def test_detail_says_a_stranger_cannot_edit(client, author, make_recipe):
     recipe = make_recipe(author)
 
     assert client.get(f"/api/recipes/{recipe.pk}/").json()["recipe"]["can_edit"] is False
+
+
+@pytest.mark.django_db
+def test_detail_reports_the_signed_in_users_own_rating(auth_client, author, make_recipe):
+    recipe = make_recipe(author)
+
+    assert auth_client.get(f"/api/recipes/{recipe.pk}/").json()["recipe"]["user_rating"] is None
+
+    auth_client.put(
+        f"/api/recipes/{recipe.pk}/review/",
+        data=json.dumps({"rating": 4}),
+        content_type="application/json",
+    )
+
+    assert auth_client.get(f"/api/recipes/{recipe.pk}/").json()["recipe"]["user_rating"] == 4
+
+
+@pytest.mark.django_db
+def test_detail_ignores_other_peoples_ratings(auth_client, author, other_user, make_recipe):
+    """The field answers "*your* rating", not "some rating".
+
+    This is the one that catches a `.filter(recipe=recipe)` typo that forgot
+    the user — the anonymous test below can't, since it never gets past the
+    is_authenticated guard.
+    """
+    recipe = make_recipe(author)
+    Review.objects.create(recipe=recipe, user=other_user, rating=5)
+
+    assert auth_client.get(f"/api/recipes/{recipe.pk}/").json()["recipe"]["user_rating"] is None
+
+
+@pytest.mark.django_db
+def test_detail_reports_no_rating_for_an_anonymous_reader(client, author, other_user, make_recipe):
+    recipe = make_recipe(author)
+    Review.objects.create(recipe=recipe, user=other_user, rating=5)
+
+    assert client.get(f"/api/recipes/{recipe.pk}/").json()["recipe"]["user_rating"] is None
 
 
 @pytest.mark.django_db
