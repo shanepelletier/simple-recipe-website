@@ -4,6 +4,7 @@ import { useNavigate, useParams } from "react-router";
 
 import { QuantityInput } from "../components/QuantityInput";
 import * as api from "../core/api";
+import { asApiError } from "../core/client";
 import type { Recipe, Tag, UnitGroup } from "../core/models";
 import {
   blankIngredient,
@@ -13,6 +14,7 @@ import {
   removeRow,
   rowsFromRecipe,
   stepsFromRecipe,
+  toRecipeBody,
   updateRow,
 } from "../core/rows";
 import type { IngredientRow, QuantityValue, StepRow } from "../core/rows";
@@ -32,6 +34,12 @@ export default function RecipeForm() {
   const units = useUnits();
   const tags = useApi(() => api.tags(), []);
 
+  // Bumped when the conflict panel's Reload is pressed. It goes into the
+  // editor's key, so a reload replaces the whole form — including the version
+  // it will send next — rather than refreshing the data underneath state that
+  // still remembers the stale one.
+  const [reloads, setReloads] = useState(0);
+
   if (existing.loading || units.loading || tags.loading) {
     return <p>Loading…</p>;
   }
@@ -50,10 +58,14 @@ export default function RecipeForm() {
     // React would otherwise reuse this instance and keep recipe 1's values —
     // unreachable by clicking, but a hand-typed URL finds it immediately.
     <Editor
-      key={recipeId ?? "new"}
+      key={`${recipeId ?? "new"}:${reloads}`}
       recipe={existing.data ?? null}
       unitGroups={units.data?.groups ?? []}
       allTags={tags.data?.results ?? []}
+      onReload={() => {
+        existing.reload();
+        setReloads((n) => n + 1);
+      }}
     />
   );
 }
@@ -62,10 +74,14 @@ function Editor({
   recipe,
   unitGroups,
   allTags,
+  onReload,
 }: {
+  /** null when creating. Editing carries the id and the version together, so
+   *  neither can be missing while the other is present. */
   recipe: Recipe | null;
   unitGroups: UnitGroup[];
   allTags: Tag[];
+  onReload: () => void;
 }) {
   const navigate = useNavigate();
 
@@ -79,7 +95,10 @@ function Editor({
   const [steps, setSteps] = useState<StepRow[]>(
     recipe === null ? [blankStep()] : stepsFromRecipe(recipe),
   );
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [errors, setErrors] = useState<Record<string, string[]>>({});
+  const [formError, setFormError] = useState("");
+  const [conflict, setConflict] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   function toggleTag(tagId: number) {
     setSelectedTags((current) =>
@@ -87,20 +106,63 @@ function Editor({
     );
   }
 
-  function onSubmit(event: SubmitEvent<HTMLFormElement>) {
+  async function onSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (saving) {
+      return;
+    }
 
-    const problems: Record<string, string> = {};
+    const problems: Record<string, string[]> = {};
+    const ready = completeIngredients(ingredients);
     if (name.trim() === "") {
-      problems.name = "Give the recipe a name.";
+      problems.name = ["Give the recipe a name."];
     }
-    if (completeIngredients(ingredients) === null) {
-      problems.ingredients = "Every ingredient needs a quantity, a unit and a name.";
+    if (ready === null) {
+      problems.ingredients = ["Every ingredient needs a quantity, a unit and a name."];
     }
-    if (steps.every((step) => step.text.trim() === "")) {
-      problems.steps = "Add at least one step.";
+    const written = steps.filter((step) => step.text.trim() !== "");
+    if (written.length === 0) {
+      problems.steps = ["Add at least one step."];
     }
-    setErrors(problems);
+    if (ready === null || Object.keys(problems).length > 0) {
+      setErrors(problems);
+      return;
+    }
+
+    setSaving(true);
+    setErrors({});
+    setFormError("");
+    setConflict(false);
+
+    const body = toRecipeBody(name.trim(), selectedTags, ready, written);
+
+    try {
+      // Branching on the recipe rather than on an id kept alongside it: the
+      // id and the version are either both present or both absent, so there is
+      // no state where one has to be invented.
+      const { recipe: saved } =
+        recipe === null
+          ? await api.createRecipe(body)
+          : await api.updateRecipe(recipe.id, {
+              ...body,
+              // Sending back the version this form was loaded against is what
+              // lets the server tell "nobody touched it" from "someone did".
+              version: recipe.version,
+            });
+      navigate(`/recipes/${saved.id}`);
+    } catch (reason) {
+      const failure = asApiError(reason);
+      if (failure.status === 409) {
+        setConflict(true);
+        return;
+      }
+      setErrors(failure.fields);
+      setFormError(failure.message);
+    } finally {
+      // Runs even on the `return` above, which matters: the conflict path has
+      // to leave Save pressable so it can be tried again after a reload.
+      setSaving(false);
+    }
   }
 
   const tagsFull = selectedTags.length >= MAX_TAGS;
@@ -109,14 +171,35 @@ function Editor({
     <form onSubmit={onSubmit}>
       <h1>{recipe === null ? "New recipe" : `Edit ${recipe.name}`}</h1>
 
+      {/* The visible payoff of the optimistic locking, so it reads as a
+          designed state rather than a generic failure. The typed values stay
+          on screen until the user chooses — nothing is discarded for them. */}
+      {conflict && (
+        <div className="conflict" role="alert">
+          <h2>Someone else edited this recipe while you were working on it</h2>
+          <p>Your changes haven&rsquo;t been saved.</p>
+          <p>
+            Reloading replaces what is on screen with their version. Copy anything you want to keep
+            first.
+          </p>
+          <button type="button" onClick={onReload}>
+            Reload
+          </button>
+        </div>
+      )}
+
+      {formError !== "" && <p role="alert">{formError}</p>}
+
       <label>
         Name
         <input value={name} onChange={(event) => setName(event.target.value)} />
       </label>
-      {errors.name !== undefined && <p role="alert">{errors.name}</p>}
+      <FieldErrors messages={errors.name} />
 
       <h2>Ingredients</h2>
-      {errors.ingredients !== undefined && <p role="alert">{errors.ingredients}</p>}
+      {/* A list, one message per bad row, so a five-ingredient recipe says
+          which line the server objected to. */}
+      <FieldErrors messages={errors.ingredients} />
       <ol className="rows">
         {ingredients.map((row, index) => (
           // Keyed by row.key, never by index. Keyed by index, React reuses the
@@ -145,7 +228,7 @@ function Editor({
       </button>
 
       <h2>Steps</h2>
-      {errors.steps !== undefined && <p role="alert">{errors.steps}</p>}
+      <FieldErrors messages={errors.steps} />
       <ol className="rows">
         {steps.map((row, index) => (
           <li key={row.key}>
@@ -170,6 +253,7 @@ function Editor({
       </button>
 
       <h2>Tags</h2>
+      <FieldErrors messages={errors.tags} />
       <p>
         {selectedTags.length} of {MAX_TAGS} tags selected
       </p>
@@ -196,12 +280,27 @@ function Editor({
       </ul>
 
       <div className="detail__actions">
-        <button type="submit">Save recipe</button>
+        <button type="submit" disabled={saving}>
+          {saving ? "Saving…" : "Save recipe"}
+        </button>
         <button type="button" onClick={() => navigate(-1)}>
           Cancel
         </button>
       </div>
     </form>
+  );
+}
+
+function FieldErrors({ messages }: { messages?: string[] }) {
+  if (messages === undefined || messages.length === 0) {
+    return null;
+  }
+  return (
+    <ul className="field-errors" role="alert">
+      {messages.map((message) => (
+        <li key={message}>{message}</li>
+      ))}
+    </ul>
   );
 }
 

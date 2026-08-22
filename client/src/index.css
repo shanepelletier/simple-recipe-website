@@ -429,3 +429,35 @@ code {
   padding: 0;
   margin: 8px 0 24px;
 }
+
+/* --- edit conflict --- */
+
+.conflict {
+  border: 1px solid var(--accent-border);
+  background: var(--accent-bg);
+  border-radius: 8px;
+  padding: 16px;
+  margin: 0 0 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: start;
+  gap: 8px;
+}
+
+.conflict h2 {
+  margin: 0;
+}
+
+.field-errors {
+  list-style: none;
+  padding: 0;
+  margin: 4px 0;
+  color: #b3261e;
+  font-size: 15px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .field-errors {
+    color: #f2b8b5;
+  }
+}
