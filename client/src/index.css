@@ -160,3 +160,50 @@ code {
 .card__owner {
   margin-bottom: 12px;
 }
+
+/* Same footprint as a real card, so nothing moves when the results land. */
+.card--skeleton {
+  aspect-ratio: 4 / 3;
+  height: auto;
+  background: var(--code-bg);
+  border-style: dashed;
+}
+
+/* --- grid page --- */
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 12px;
+  margin: 0 0 24px;
+}
+
+.filters label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 14px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px;
+}
+
+.state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 48px 0;
+}
+
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin: 24px 0;
+}

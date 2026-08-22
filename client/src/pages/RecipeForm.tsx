@@ -1,3 +1,3 @@
 export default function RecipeForm() {
-  return <p>Recipe form</p>;
+  return <h1>Recipe form</h1>;
 }

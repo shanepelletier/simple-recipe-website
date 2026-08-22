@@ -1,3 +1,3 @@
 export default function ShoppingList() {
-  return <p>Shopping list</p>;
+  return <h1>Shopping list</h1>;
 }

@@ -70,22 +70,26 @@ describe("routes", () => {
   });
 
   // And without this, guarding everything unconditionally would pass both.
+  //
+  // Asserted against the page's heading rather than its text, so this keeps
+  // working as each page grows past its stub: every page has exactly one <h1>,
+  // and the only thing that matters here is that it isn't the login page's.
   it.for(guardedRoutes)("$path lets a signed-in user through", async ({ path }) => {
     renderAt(withParams(path), signedIn);
 
-    expect(await page().findByText(/Recipe form|Shopping list/)).toBeDefined();
+    expect((await page().findByRole("heading")).textContent).not.toBe("Sign in");
   });
 
   it("sends an unknown path to the grid", async () => {
     renderAt("/nonsense", signedOut);
 
-    expect(await page().findByText("Recipe grid")).toBeDefined();
+    expect((await page().findByRole("heading")).textContent).toBe("Recipes");
   });
 
   it("renders nothing at all until the session check has answered", () => {
     renderAt("/", { ...signedOut, ready: false });
 
-    expect(screen.queryByText("Recipe grid")).toBeNull();
-    expect(screen.queryByText("Recipes")).toBeNull();
+    expect(screen.queryByRole("main")).toBeNull();
+    expect(screen.queryByRole("banner")).toBeNull();
   });
 });
