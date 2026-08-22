@@ -1,3 +1,19 @@
+import { Link } from "react-router";
+
+import { CredentialsForm } from "../components/CredentialsForm";
+import { useAuth } from "../core/auth-context";
+
 export default function Login() {
-  return <p>Sign in</p>;
+  const { signIn } = useAuth();
+
+  return (
+    <CredentialsForm
+      title="Sign in"
+      submitLabel="Sign in"
+      pendingLabel="Signing in…"
+      passwordAutoComplete="current-password"
+      action={signIn}
+      footer={<Link to="/register">Need an account?</Link>}
+    />
+  );
 }

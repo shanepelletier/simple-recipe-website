@@ -64,7 +64,9 @@ describe("routes", () => {
   it.for(guardedRoutes)("$path sends an anonymous visitor to the login page", async ({ path }) => {
     renderAt(withParams(path), signedOut);
 
-    expect(await page().findByText("Sign in")).toBeDefined();
+    // By heading, not by text: the login page's submit button also says
+    // "Sign in", and so does a link in the header.
+    expect(await page().findByRole("heading", { name: "Sign in" })).toBeDefined();
   });
 
   // And without this, guarding everything unconditionally would pass both.
