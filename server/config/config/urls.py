@@ -27,3 +27,9 @@ urlpatterns: list[URLResolver | URLPattern] = [
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+# Only fire when DEBUG = False; Django's own debug page wins otherwise, which is
+# more useful during development. Also covers /admin/ — a JSON 404 there is rare
+# and harmless, so it isn't worth branching on request.path for.
+handler404 = "api.errors.not_found"
+handler500 = "api.errors.server_error"

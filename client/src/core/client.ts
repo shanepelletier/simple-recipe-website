@@ -71,6 +71,15 @@ async function request<T>(method: string, url: string, payload?: Payload): Promi
   const response = await fetch(url, { method, headers, body, credentials: "same-origin" });
 
   if (!response.ok) {
+    // 502/503/504 come from the Vite dev proxy (or any reverse proxy in
+    // front of Django), never from the app itself, so they mean the same
+    // thing a fetch-level TypeError means: nothing is listening on the other
+    // side. A crashed *view* still answers with its own status (500, HTML
+    // body and all — see the fallback in ApiError), so this doesn't shadow
+    // that case.
+    if ([502, 503, 504].includes(response.status)) {
+      throw new ApiError(0, { error: "Couldn't reach the server. Is it running?" });
+    }
     throw new ApiError(response.status, await readBody(response));
   }
   return (await response.json()) as T;

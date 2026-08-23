@@ -150,4 +150,15 @@ describe("errors", () => {
     expect(failure.status).toBe(0);
     expect(failure.message).toMatch(/reach the server/);
   });
+
+  it("treats a dead-upstream response from the dev proxy the same as a network failure", async () => {
+    // Vite answers 502 itself when Django isn't listening — fetch never sees
+    // a rejected promise, just an HTTP response with nothing useful in it.
+    respondWith("<html>502 Bad Gateway</html>", { status: 502 });
+
+    const failure = await failureFrom(() => get("/api/recipes/"));
+
+    expect(failure.status).toBe(0);
+    expect(failure.message).toMatch(/reach the server/);
+  });
 });

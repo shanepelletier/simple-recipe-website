@@ -95,3 +95,13 @@ def test_login_required_json_returns_401_for_anonymous_users():
     response = call(view)
 
     assert response.status_code == 401
+
+
+@pytest.mark.django_db
+def test_a_missing_recipe_returns_the_json_error_envelope(client, settings):
+    settings.DEBUG = False
+
+    response = client.get("/api/recipes/999999/")
+
+    assert response.status_code == 404
+    assert response.json() == {"error": "Not found.", "fields": {}}

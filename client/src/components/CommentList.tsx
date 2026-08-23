@@ -123,15 +123,19 @@ function Thread({ recipeId, sort }: { recipeId: number; sort: Sort }) {
 
 function CommentItem({ comment, onDeleted }: { comment: Comment; onDeleted: () => void }) {
   const [busy, setBusy] = useState(false);
+  const [failed, setFailed] = useState(false);
 
   async function onDelete() {
     if (busy || !confirm("Delete this comment?")) {
       return;
     }
     setBusy(true);
+    setFailed(false);
     try {
       await api.deleteComment(comment.id);
       onDeleted();
+    } catch {
+      setFailed(true);
     } finally {
       setBusy(false);
     }
@@ -162,6 +166,7 @@ function CommentItem({ comment, onDeleted }: { comment: Comment; onDeleted: () =
           Delete
         </button>
       )}
+      {failed && <span role="alert">Didn&rsquo;t work. Try again.</span>}
     </li>
   );
 }
