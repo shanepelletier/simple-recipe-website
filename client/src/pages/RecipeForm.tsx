@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import type { SubmitEvent } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 
@@ -6,7 +6,7 @@ import { QuantityInput } from "../components/QuantityInput";
 import * as api from "../core/api";
 import { asApiError } from "../core/client";
 import type { Recipe, Tag, UnitGroup } from "../core/models";
-import { PHOTO_ACCEPT, photoProblem } from "../core/photos";
+import { PHOTO_ACCEPT, usePhotoChoice } from "../core/photos";
 import {
   blankIngredient,
   blankStep,
@@ -96,8 +96,8 @@ function Editor({
   const [steps, setSteps] = useState<StepRow[]>(
     recipe === null ? [blankStep()] : stepsFromRecipe(recipe),
   );
-  const [photo, setPhoto] = useState<{ file: File; url: string } | null>(null);
-  const [photoError, setPhotoError] = useState("");
+  const { photo, photoError, setPhotoError, fileInput, choose, clear, rejectUndecodable } =
+    usePhotoChoice();
   const [errors, setErrors] = useState<Record<string, string[]>>({});
   const [formError, setFormError] = useState("");
   const [conflict, setConflict] = useState(false);
@@ -106,56 +106,12 @@ function Editor({
   // successful save. Only reachable on screen when the photo then failed:
   // every other successful save leaves for the recipe page.
   const [saved, setSaved] = useState<Recipe | null>(null);
-  // Clearing the photo state does not clear the input, which keeps showing the
-  // old filename until its value is reset by hand.
-  const fileInput = useRef<HTMLInputElement>(null);
-
   // What a save will act on. After a create whose photo upload failed, that is
   // the recipe that now exists — so pressing Save again updates it instead of
   // creating a second copy of the same recipe.
   const target = saved ?? recipe;
   const storedPhoto = target?.photo ?? null;
   const savedWithoutPhoto = saved !== null && photoError !== "";
-
-  // A blob URL lives until it is revoked, so the previous one is released
-  // whenever the choice changes. Doing it here rather than in an effect keeps
-  // the object URL out of the render cycle entirely.
-  function choosePhoto(file: File | null) {
-    if (photo !== null) {
-      URL.revokeObjectURL(photo.url);
-    }
-    setPhotoError("");
-
-    const problem = file === null ? null : photoProblem(file);
-    if (problem !== null) {
-      setPhotoError(problem);
-      setPhoto(null);
-      resetFileInput();
-      return;
-    }
-
-    setPhoto(file === null ? null : { file, url: URL.createObjectURL(file) });
-  }
-
-  function resetFileInput() {
-    if (fileInput.current !== null) {
-      fileInput.current.value = "";
-    }
-  }
-
-  function clearPhoto() {
-    choosePhoto(null);
-    resetFileInput();
-  }
-
-  /** The preview failed to decode, so the file is not the image its name
-   *  claims. The server's third check is exactly this — Pillow opening the
-   *  file — and the browser has already done the work by the time the preview
-   *  breaks, so there is no reason to save first and find out afterwards. */
-  function rejectUndecodablePhoto() {
-    clearPhoto();
-    setPhotoError("Upload a valid image file.");
-  }
 
   function toggleTag(tagId: number) {
     setSelectedTags((current) =>
@@ -297,7 +253,7 @@ function Editor({
           className="form__photo"
           src={photo.url}
           alt="Selected photo"
-          onError={rejectUndecodablePhoto}
+          onError={rejectUndecodable}
         />
       ) : (
         storedPhoto !== null && (
@@ -311,11 +267,11 @@ function Editor({
             ref={fileInput}
             type="file"
             accept={PHOTO_ACCEPT}
-            onChange={(event) => choosePhoto(event.target.files?.[0] ?? null)}
+            onChange={(event) => choose(event.target.files?.[0] ?? null)}
           />
         </label>
         {photo !== null && (
-          <button type="button" onClick={clearPhoto}>
+          <button type="button" onClick={clear}>
             {/* Not "Remove" once a photo is stored: no endpoint deletes one, so
                 that label would promise something the app cannot do. All this
                 can undo is the choice. */}

@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import type { SubmitEvent } from "react";
 import { Link } from "react-router";
 
@@ -6,6 +6,7 @@ import * as api from "../core/api";
 import { useAuth } from "../core/auth-context";
 import { asApiError } from "../core/client";
 import type { Comment } from "../core/models";
+import { PHOTO_ACCEPT, usePhotoChoice } from "../core/photos";
 import { useApi } from "../core/useApi";
 
 type Sort = "newest" | "oldest";
@@ -173,30 +174,14 @@ function CommentForm({
   onAdded: (comment: Comment) => void;
 }) {
   const [body, setBody] = useState("");
-  const [photo, setPhoto] = useState<{ file: File; url: string } | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
   const [formError, setFormError] = useState("");
-  // Clearing the photo state does not clear the input, which keeps showing the
-  // old filename until its value is reset by hand.
-  const fileInput = useRef<HTMLInputElement>(null);
-
-  // A blob URL lives until it is revoked, so the previous one is released
-  // whenever the choice changes. Doing it here rather than in an effect keeps
-  // the object URL out of the render cycle entirely.
-  function choosePhoto(file: File | null) {
-    if (photo !== null) {
-      URL.revokeObjectURL(photo.url);
-    }
-    setPhoto(file === null ? null : { file, url: URL.createObjectURL(file) });
-  }
-
-  function clearPhoto() {
-    choosePhoto(null);
-    if (fileInput.current !== null) {
-      fileInput.current.value = "";
-    }
-  }
+  // Comment photos go through the same validators as recipe photos — the view
+  // calls full_clean(), which runs validate_image — so they get the same
+  // guards, from the same place.
+  const { photo, photoError, setPhotoError, fileInput, choose, clear, rejectUndecodable } =
+    usePhotoChoice();
 
   async function onSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -206,15 +191,19 @@ function CommentForm({
     setSubmitting(true);
     setFieldErrors({});
     setFormError("");
+    setPhotoError("");
 
     try {
       const { comment } = await api.addComment(recipeId, body, photo?.file);
       onAdded(comment);
       setBody("");
-      clearPhoto();
+      clear();
     } catch (reason) {
       const failure = asApiError(reason);
       setFieldErrors(failure.fields);
+      // Photo messages render in one place whichever side produced them, so a
+      // new choice clears the last one rather than leaving it beside the input.
+      setPhotoError(failure.fields.photo?.join(" ") ?? "");
       setFormError(failure.message);
     } finally {
       setSubmitting(false);
@@ -245,20 +234,21 @@ function CommentForm({
         <input
           ref={fileInput}
           type="file"
-          accept="image/*"
-          onChange={(event) => choosePhoto(event.target.files?.[0] ?? null)}
+          accept={PHOTO_ACCEPT}
+          onChange={(event) => choose(event.target.files?.[0] ?? null)}
         />
       </label>
-      {fieldErrors.photo?.map((message) => (
-        <p key={message} role="alert">
-          {message}
-        </p>
-      ))}
+      {photoError !== "" && <p role="alert">{photoError}</p>}
 
       {photo !== null && (
         <div>
-          <img className="comment__photo" src={photo.url} alt="Selected attachment" />
-          <button type="button" onClick={clearPhoto}>
+          <img
+            className="comment__photo"
+            src={photo.url}
+            alt="Selected attachment"
+            onError={rejectUndecodable}
+          />
+          <button type="button" onClick={clear}>
             Remove
           </button>
         </div>
