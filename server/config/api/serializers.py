@@ -1,4 +1,4 @@
-from recipes.format import format_quantity, trim
+from recipes.format import format_ingredient, trim
 from recipes.models import Review
 from recipes.permissions import can_delete_comment, can_edit_recipe
 
@@ -41,7 +41,7 @@ def recipe_ingredient_to_dict(item):
         "ingredient": ingredient_to_dict(item.ingredient),
         "unit": unit_to_dict(item.unit),
         "quantity": trim(item.quantity),
-        "display": format_quantity(item.quantity, item.unit, item.ingredient),
+        "display": format_ingredient(item.quantity, item.unit, item.ingredient),
         "position": item.position,
     }
 
@@ -119,7 +119,7 @@ def shopping_item_to_dict(item):
         "ingredient": ingredient_to_dict(item.ingredient),
         "unit": unit_to_dict(item.unit),
         "quantity": trim(item.quantity),
-        "display": format_quantity(item.quantity, item.unit, item.ingredient),
+        "display": format_ingredient(item.quantity, item.unit, item.ingredient),
         "is_checked": item.is_checked,
         "source_recipe_id": item.source_recipe_id,
     }

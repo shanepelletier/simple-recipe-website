@@ -6,7 +6,7 @@ def trim(value: Decimal) -> str:
     return f"{value.normalize():f}"
 
 
-def format_quantity(quantity: Decimal, unit, ingredient) -> str:
+def format_ingredient(quantity: Decimal, unit, ingredient) -> str:
     """Render one line: "2 pounds of beef", "3 whole oranges"."""
     singular = quantity == 1
     unit_word = unit.name if singular else unit.plural

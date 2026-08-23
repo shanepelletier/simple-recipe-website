@@ -4,7 +4,7 @@ from django.core.validators import MaxLengthValidator, MaxValueValidator, MinVal
 from django.db import models
 from django.db.models.signals import post_delete
 
-from .format import format_quantity
+from .format import format_ingredient
 from .photos import delete_photo_file, upload_to, validate_image
 
 MAX_COMMENT_WORDS = 250
@@ -152,7 +152,7 @@ class RecipeIngredient(models.Model):
         ]
 
     def __str__(self):
-        return format_quantity(self.quantity, self.unit, self.ingredient)
+        return format_ingredient(self.quantity, self.unit, self.ingredient)
 
 
 class Step(models.Model):
@@ -246,4 +246,4 @@ class ShoppingItem(models.Model):
         ]
 
     def __str__(self):
-        return format_quantity(self.quantity, self.unit, self.ingredient)
+        return format_ingredient(self.quantity, self.unit, self.ingredient)
