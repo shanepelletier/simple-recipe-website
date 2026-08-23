@@ -437,6 +437,73 @@ code {
   margin: 8px 0;
 }
 
+/* --- shopping list --- */
+
+.shopping__group {
+  margin: 0 0 24px;
+}
+
+/* Smaller than a section heading elsewhere, and heavier: this is the name of a
+   thing to buy rather than a part of the page, and at 24px it competed with the
+   lines it is supposed to be gathering. */
+.shopping__group h2 {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: 0;
+  margin: 0;
+}
+
+/* Indented under its heading and sharing the recipe form's left rule, so two
+   measures of the same ingredient read as two lines of one entry rather than
+   as a merge that didn't happen. */
+.shopping__items {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0 0 0 20px;
+  /* The accent rather than the neutral border: this bracket is the only thing
+     saying "these lines belong to that name", so it has to be visible at a
+     glance rather than technically present. */
+  border-left: 2px solid var(--accent-border);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.shopping__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.shopping__row label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Struck through where it stands. Moving checked lines to the bottom would
+   reorder the list under the finger that just tapped it. */
+.shopping__row--checked .shopping__display {
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+
+/* The darkest thing on the row is what to buy; the rest is apparatus. */
+.shopping__display {
+  color: var(--text-h);
+}
+
+.shopping__source {
+  font-size: 13px;
+}
+
+.shopping__add {
+  margin: 32px 0 0;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
 /* --- a save that only partly landed --- */
 
 /* Two of them: someone else's edit won, or the recipe saved and its photo

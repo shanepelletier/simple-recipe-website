@@ -54,7 +54,7 @@ function respondWith(results: { id: number; name: string }[]) {
 // The control is fully controlled, so a test that pins its value with a spy
 // is not driving it — React skips onChange when the value never changes, and
 // the dropdown never opens. This harness owns the state the way the form does.
-function show(initial: Partial<QuantityValue> = {}) {
+function show(initial: Partial<QuantityValue> = {}, allowCreate = true) {
   const onChange = vi.fn();
 
   function Harness() {
@@ -63,6 +63,7 @@ function show(initial: Partial<QuantityValue> = {}) {
       <QuantityInput
         value={value}
         unitGroups={unitGroups}
+        allowCreate={allowCreate}
         onChange={(next) => {
           onChange(next);
           setValue(next);
@@ -97,6 +98,19 @@ describe("QuantityInput", () => {
     // The typed word, not a fixed placeholder — this option is what creates an
     // ingredient the catalog doesn't have.
     expect(await screen.findByRole("button", { name: /create “okra”/i })).toBeDefined();
+  });
+
+  it("offers no dropdown at all where creating is not allowed and nothing matches", async () => {
+    // The shopping list's endpoint takes an ingredient id and nothing else, so
+    // an empty bordered box under the input would be the only thing left of a
+    // control that could not have worked anyway.
+    respondWith([]);
+    show({}, false);
+
+    fireEvent.change(ingredientBox(), { target: { value: "okra" } });
+
+    await waitFor(() => expect(document.querySelector(".quantity__matches")).toBeNull());
+    expect(screen.queryByRole("button", { name: /create/i })).toBeNull();
   });
 
   it("does not offer to create one that already exists", async () => {

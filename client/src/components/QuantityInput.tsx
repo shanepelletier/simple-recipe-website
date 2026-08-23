@@ -12,9 +12,18 @@ interface Props {
   onChange: (value: QuantityValue) => void;
   /** Passed in rather than fetched here — one request for the whole form. */
   unitGroups: UnitGroup[];
+  /**
+   * Whether typing a name the catalog doesn't have offers to create it.
+   *
+   * False on the shopping list, whose endpoint takes an `ingredient_id` and
+   * nothing else: offering "Create okra" there would be a control that can
+   * only end in the server refusing it. Recipes are where ingredients come
+   * from, so that is where the option belongs.
+   */
+  allowCreate?: boolean;
 }
 
-export function QuantityInput({ value, onChange, unitGroups }: Props) {
+export function QuantityInput({ value, onChange, unitGroups, allowCreate = true }: Props) {
   const [matches, setMatches] = useState<Ingredient[]>([]);
   const [open, setOpen] = useState(false);
   const debounce = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -58,6 +67,7 @@ export function QuantityInput({ value, onChange, unitGroups }: Props) {
   const exactMatch = matches.some(
     (candidate) => candidate.name.toLowerCase() === typed.toLowerCase(),
   );
+  const offerCreate = allowCreate && !exactMatch;
 
   return (
     <div className="quantity">
@@ -109,7 +119,9 @@ export function QuantityInput({ value, onChange, unitGroups }: Props) {
           onChange={(event) => onIngredientTyped(event.target.value)}
           onFocus={() => setOpen(true)}
         />
-        {open && typed !== "" && (
+        {/* Nothing to offer means no dropdown at all, rather than an empty
+            bordered box hanging under the input. */}
+        {open && typed !== "" && (matches.length > 0 || offerCreate) && (
           <ul className="quantity__matches">
             {matches.map((ingredient) => (
               <li key={ingredient.id}>
@@ -118,7 +130,7 @@ export function QuantityInput({ value, onChange, unitGroups }: Props) {
                 </button>
               </li>
             ))}
-            {!exactMatch && (
+            {offerCreate && (
               <li>
                 {/* The typed text, not a placeholder — this is the option that
                     creates an ingredient the catalog doesn't have yet. */}

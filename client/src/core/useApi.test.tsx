@@ -76,6 +76,36 @@ describe("useApi", () => {
     await waitFor(() => expect(load).toHaveBeenCalledTimes(2));
   });
 
+  it("folds each setData updater into the value the last one left", async () => {
+    // Two writes in flight: both updaters were created before either landed,
+    // so a caller passing values instead would overwrite the first with a copy
+    // of the list from before it happened.
+    const { result } = renderHook(() => useApi(async () => ["a"], []));
+    await waitFor(() => expect(result.current.data).toEqual(["a"]));
+
+    act(() => {
+      result.current.setData((current) => [...current, "b"]);
+      result.current.setData((current) => [...current, "c"]);
+    });
+
+    expect(result.current.data).toEqual(["a", "b", "c"]);
+  });
+
+  it("drops an update against a value that never loaded", async () => {
+    // There is no current value to fold into, and a write cannot have
+    // succeeded against a list that never arrived.
+    const { result } = renderHook(() =>
+      useApi<string>(async () => {
+        throw new ApiError(500, { error: "Server error.", fields: {} });
+      }, []),
+    );
+    await waitFor(() => expect(result.current.error).not.toBeNull());
+
+    act(() => result.current.setData((current) => `${current}!`));
+
+    expect(result.current.data).toBeNull();
+  });
+
   it("records a failure and stops loading", async () => {
     const load = vi.fn(async () => {
       throw new ApiError(404, { error: "Not found.", fields: {} });

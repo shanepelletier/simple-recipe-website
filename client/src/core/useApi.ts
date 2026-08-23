@@ -8,8 +8,15 @@ export interface Loaded<T> {
   loading: boolean;
   error: ApiError | null;
   reload: () => void;
-  /** For updating the loaded value in place after a successful write. */
-  setData: (value: T) => void;
+  /**
+   * For updating the loaded value in place after a successful write.
+   *
+   * Takes an updater as well as a value, because two writes can be in flight
+   * at once: a caller that computes the next value from the render it started
+   * in would fold the second response into a list that predates the first, and
+   * quietly undo it. An updater always folds into what is there now.
+   */
+  setData: (next: T | ((current: T) => T)) => void;
 }
 
 export function useApi<T>(load: () => Promise<T>, deps: unknown[]): Loaded<T> {
@@ -68,5 +75,19 @@ export function useApi<T>(load: () => Promise<T>, deps: unknown[]): Loaded<T> {
 
   const reload = useCallback(() => setAttempt((n) => n + 1), []);
 
-  return { data, loading, error, reload, setData };
+  const update = useCallback((next: T | ((current: T) => T)) => {
+    if (typeof next !== "function") {
+      setData(next);
+      return;
+    }
+    // The cast is the price of T being unconstrained: TypeScript cannot rule
+    // out a T that is itself a function, so it will not narrow this on typeof.
+    const fold = next as (current: T) => T;
+    // A null current means nothing ever loaded, and a write cannot have
+    // succeeded against a value that never arrived — so there is nothing to
+    // fold into and the update is dropped rather than inventing a value.
+    setData((current) => (current === null ? null : fold(current)));
+  }, []);
+
+  return { data, loading, error, reload, setData: update };
 }
