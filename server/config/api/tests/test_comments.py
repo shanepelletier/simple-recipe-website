@@ -42,9 +42,19 @@ def test_an_empty_comment_is_rejected(auth_client, author, make_recipe):
 def test_an_over_long_comment_is_rejected(auth_client, author, make_recipe):
     recipe = make_recipe(author)
 
-    response = auth_client.post(f"/api/recipes/{recipe.pk}/comments/", {"body": "x" * 2001})
+    response = auth_client.post(f"/api/recipes/{recipe.pk}/comments/", {"body": "x" * 3001})
 
     assert response.status_code == 400
+
+
+@pytest.mark.django_db
+def test_a_comment_over_250_words_is_rejected(auth_client, author, make_recipe):
+    recipe = make_recipe(author)
+
+    response = auth_client.post(f"/api/recipes/{recipe.pk}/comments/", {"body": "word " * 251})
+
+    assert response.status_code == 400
+    assert "body" in response.json()["fields"]
 
 
 @pytest.mark.django_db

@@ -47,7 +47,8 @@ def comment_create(request, pk):
     comment = Comment(
         recipe=recipe, author=request.user, body=body, photo=request.FILES.get("photo")
     )
-    # Runs validate_image on the photo and the 2000-character cap on the body.
+    # Runs validate_image on the photo, the 3000-character cap, and the
+    # 250-word cap on the body.
     comment.full_clean()
     comment.save()
 

@@ -7,6 +7,8 @@ from django.db.models.signals import post_delete
 from .format import format_quantity
 from .photos import delete_photo_file, upload_to, validate_image
 
+MAX_COMMENT_WORDS = 250
+
 
 class Unit(models.Model):
     """A measurement, e.g. pound / cup / whole.
@@ -196,8 +198,8 @@ class Comment(models.Model):
     # enforced by full_clean() the way CharField's max_length is (CharField
     # appends a MaxLengthValidator in __init__; TextField does not). This
     # project never goes through a ModelForm, so the explicit validator
-    # below is what actually makes the 2000-character cap real.
-    body = models.TextField(max_length=2000, validators=[MaxLengthValidator(2000)])
+    # below is what actually makes the 3000-character cap real.
+    body = models.TextField(max_length=3000, validators=[MaxLengthValidator(3000)])
     photo = models.ImageField(
         upload_to=upload_to, null=True, blank=True, validators=[validate_image]
     )
@@ -209,6 +211,10 @@ class Comment(models.Model):
 
     def __str__(self):
         return f"{self.author} on {self.recipe.name}"
+
+    def clean(self):
+        if len(self.body.split()) > MAX_COMMENT_WORDS:
+            raise ValidationError({"body": f"Comments can be at most {MAX_COMMENT_WORDS} words."})
 
 
 post_delete.connect(delete_photo_file, sender=Comment)
