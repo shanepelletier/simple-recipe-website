@@ -6,8 +6,6 @@ from recipes.models import Ingredient, Tag, Unit
 
 from api.http import BadRequest
 
-MAX_INGREDIENTS = 50
-
 
 @dataclass
 class ParsedRecipe:
@@ -67,12 +65,9 @@ def _parse_ingredients(raw, fields):
     if not isinstance(raw, list) or not raw:
         fields["ingredients"] = ["Add at least one ingredient."]
         return []
-    if len(raw) > MAX_INGREDIENTS:
-        fields["ingredients"] = [f"A recipe can have at most {MAX_INGREDIENTS} ingredients."]
-        return []
 
-    # One query for every unit rather than one per row (a fifty-ingredient
-    # recipe would otherwise cost fifty queries). Safe to load in full
+    # One query for every unit rather than one per row (a long ingredient
+    # list would otherwise cost one query per row). Safe to load in full
     # because, unlike ingredients, units aren't user-created — admins curate
     # a small, deliberately short list of measurements, so this table never
     # grows to a size where loading it all is a problem.
