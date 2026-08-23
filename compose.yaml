@@ -1,3 +1,12 @@
+# Three services, one per process that would be its own machine in a real
+# deployment: the database, the application, and the web server in front of it.
+#
+#   docker compose up --build     the whole site on ${WEB_PORT}
+#   docker compose up db          just the database, for running Django and
+#                                 the client on the host while developing
+#
+# Only the first of those is the deployed shape; see the DJANGO_DEBUG comment
+# on the app service for the one setting that separates them.
 services:
   db:
     image: postgres:18.6-alpine
@@ -8,6 +17,9 @@ services:
       POSTGRES_DB: ${DB_NAME}
       APP_DB_USER: ${DB_USER}
       APP_DB_PASSWORD: ${DB_PASSWORD}
+    # Published on the host so the development mode above can reach it without
+    # running the other two services: `docker compose up db` is a complete
+    # backing store for `manage.py runserver` on the host.
     ports:
       - "${DB_PORT}:5432"
     volumes:
@@ -27,13 +39,42 @@ services:
         condition: service_healthy
     env_file: .env
     environment:
+      # Overrides whatever .env says, because .env is the *development* file
+      # and its DB_HOST points at localhost. Inside the network the database is
+      # the service name.
       DB_HOST: db
       DB_PORT: 5432
-    ports:
-      - "${APP_PORT}:8000"
+      # Also an override, and the more important one: .env carries
+      # DJANGO_DEBUG=true for the development mode, and a container that
+      # inherited it would ship Django's debug pages — stack traces and
+      # settings included — to anything that could reach it. Forcing it off
+      # here is what makes "production" mean something, and it is what puts
+      # the JSON 404/500 handlers into effect.
+      DJANGO_DEBUG: "false"
+    # No published port. Nothing reaches the application except through the web
+    # service, which is the point of putting a web server in front of it.
+    expose:
+      - "8000"
     volumes:
       - media:/app/config/media
+      - static:/app/config/staticfiles
+
+  web:
+    build:
+      context: ./client
+    restart: unless-stopped
+    depends_on:
+      - app
+    ports:
+      - "${WEB_PORT}:80"
+    # Read-only: these are written by the application and only ever read here.
+    # A web server that can write to the upload directory it serves is one
+    # file-handling bug away from being able to serve something it was handed.
+    volumes:
+      - media:/srv/media:ro
+      - static:/srv/static:ro
 
 volumes:
   pgdata:
   media:
+  static:

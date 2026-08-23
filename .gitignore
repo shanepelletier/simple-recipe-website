@@ -14,3 +14,7 @@ wheels/
 
 # User-uploaded and generated media
 server/config/media/
+
+# collectstatic output. Written into a volume in the container; only appears
+# here if collectstatic is ever run on the host.
+server/config/staticfiles/

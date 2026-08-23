@@ -125,6 +125,13 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 
+# Only ever written to by `collectstatic`, and only ever read by the web
+# container, which mounts it and serves /static/ itself. Django's dev server
+# serves the admin's CSS out of the installed apps when DEBUG is on and stops
+# doing so when it isn't, so without this the containerised admin renders as
+# unstyled HTML — the classic "it worked in development" deployment surprise.
+STATIC_ROOT = BASE_DIR / "staticfiles"
+
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 

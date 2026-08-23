@@ -1,0 +1,10 @@
+# Installed inside the image by `npm ci` against the lockfile. Copying the host
+# copy in would both bloat the context and risk carrying platform-specific
+# binaries from a different OS into the build.
+node_modules
+
+# Produced by the build stage. A stale host copy must never win over it.
+dist
+
+.git
+*.log
