@@ -69,9 +69,9 @@ In one terminal:
 ```
 cd server
 uv sync
-uv run --env-file ../.env python config/manage.py migrate
-uv run --env-file ../.env python config/manage.py seed --demo
-uv run --env-file ../.env python config/manage.py runserver 8000
+uv run --env-file ../.env config/manage.py migrate
+uv run --env-file ../.env config/manage.py seed --demo
+uv run --env-file ../.env config/manage.py runserver 8000
 ```
 
 In a second terminal:
