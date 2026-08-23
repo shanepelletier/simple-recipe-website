@@ -6,7 +6,6 @@ from recipes.models import Ingredient, Tag, Unit
 
 from api.http import BadRequest
 
-MAX_STEPS = 50
 MAX_INGREDIENTS = 50
 
 
@@ -139,6 +138,4 @@ def _parse_steps(raw, fields):
     steps = [str(text).strip() for text in raw if str(text).strip()]
     if not steps:
         fields["steps"] = ["Add at least one step."]
-    elif len(steps) > MAX_STEPS:
-        fields["steps"] = [f"A recipe can have at most {MAX_STEPS} steps."]
     return steps
