@@ -1,4 +1,5 @@
 import random
+import secrets
 from decimal import Decimal
 from io import BytesIO
 from uuid import uuid4
@@ -27,7 +28,13 @@ from recipes.models import (
 from ._bulk_data import BULK_ADJECTIVES, BULK_NOUNS
 from ._demo_data import DEMO_COMMENTS, DEMO_RECIPES, DEMO_REVIEWS
 
-DEMO_PASSWORD = "demo-password-123"
+DEMO_USERNAMES = ("admin", "moderator", "alice", "bob")
+
+# Generated fresh each run rather than fixed, so it's obvious to anyone
+# testing the demo that login is actually checking a password and not just
+# comparing against a value baked into the client or docs. The seed command
+# prints these at the end — that's the only place they're recorded.
+DEMO_PASSWORDS = {username: f"{username}-{secrets.token_hex(3)}" for username in DEMO_USERNAMES}
 
 # Cycled by index so every recipe gets a distinct-ish placeholder colour.
 PHOTO_COLOURS = [
@@ -111,8 +118,8 @@ class Command(BaseCommand):
         self._seed_comments(users, recipes)
 
         self.stdout.write(self.style.SUCCESS("\nDemo data ready. Known logins:"))
-        for username in ("admin", "moderator", "alice", "bob"):
-            self.stdout.write(f"  {username} / {DEMO_PASSWORD}")
+        for username, password in DEMO_PASSWORDS.items():
+            self.stdout.write(f"  {username} / {password}")
 
     def _seed_groups(self):
         authors, _ = Group.objects.get_or_create(name="Authors")
@@ -134,7 +141,7 @@ class Command(BaseCommand):
             user, _ = User.objects.get_or_create(username=username)
             user.is_staff = is_staff
             user.is_superuser = is_superuser
-            user.set_password(DEMO_PASSWORD)
+            user.set_password(DEMO_PASSWORDS[username])
             user.save()
             if group is not None:
                 user.groups.add(group)
