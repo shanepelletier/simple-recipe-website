@@ -517,38 +517,140 @@ main {
   max-width: 340px;
 }
 
-/* `flex-basis: 100%` is what breaks the row: the fieldset can never share a
-   line, so it always starts the second one. */
-.tag-filter {
-  flex-basis: 100%;
+/* --- tag filter --- */
+
+/* A token field rather than a row of checkboxes. The checkbox row was honest
+   about the AND semantics but its width grew with the tag list, and the tag
+   list is admin-editable — so it was a control that got worse every time the
+   product got richer. Chosen tags become tokens inside the field and the rest
+   live behind the caret, which makes the footprint independent of how many
+   tags exist.
+
+   That is also what collapsed the filter bar back to one row: this is the last
+   control on the line rather than a block underneath it, and it takes the
+   slack the three fixed-width controls leave. The max-width is the part doing
+   real work — without it the field grows to whatever is left over, and a
+   700px-wide input holding two small tokens looks like a mistake. */
+.tagfield {
+  flex: 1 1 260px;
+  max-width: 520px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  position: relative;
+}
+
+.tagfield__label {
+  font-size: 14px;
+  color: var(--text);
+}
+
+/* The box carries the control chrome; the input inside it is bare, so the
+   tokens and the caret read as contents of one field rather than as widgets
+   sitting next to an input. */
+.tagfield__box {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 2px 20px;
-  border: none;
-  margin: 0;
-  padding: 0;
-  font-size: 14px;
+  gap: 6px;
+  /* Border-box, unlike the plain div it otherwise is: the control layer sizes
+     every other control border-box, and without this the 44px floor becomes 56
+     once padding and border are added, leaving this field a head taller than
+     the selects beside it. */
+  box-sizing: border-box;
+  min-height: 44px;
+  padding: 5px 10px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
 }
 
-.tag-filter legend {
-  font-size: 14px;
-  padding: 0;
-  margin-bottom: 6px;
+.tagfield__box:hover {
+  border-color: var(--accent-border);
 }
 
-/* Padding rather than a bare checkbox-plus-text: it gives the label a real
-   target instead of asking for a tap on an 18px box. */
-.tag-filter label {
-  flex-direction: row;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 0;
-  cursor: pointer;
+.tagfield__box:focus-within {
+  border-color: var(--accent);
 }
 
-.tag-filter label:hover {
+/* The same pill the cards use for tags, made removable. */
+.tagfield__token {
+  min-height: 28px;
+  padding: 0 6px 0 10px;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 400;
   color: var(--text-h);
+  background: var(--accent-bg);
+  border: 1px solid var(--accent-border);
+  border-radius: 999px;
+}
+
+.tagfield__token:hover {
+  background: var(--accent-bg);
+  border-color: var(--accent);
+}
+
+.tagfield__input {
+  flex: 1 1 120px;
+  min-width: 100px;
+  min-height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  font-size: 15px;
+}
+
+.tagfield__input:hover {
+  border: 0;
+}
+
+/* Overlays the results, so it takes the one shadow token. */
+.tagfield__menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 2;
+  margin: 4px 0 0;
+  padding: 4px;
+  list-style: none;
+  max-height: 200px;
+  overflow-y: auto;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: var(--shadow);
+  display: none;
+}
+
+.tagfield:focus-within .tagfield__menu {
+  display: block;
+}
+
+.tagfield__option {
+  width: 100%;
+  justify-content: start;
+  min-height: 38px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  font-size: 15px;
+  font-weight: 400;
+  color: var(--text);
+}
+
+.tagfield__option:hover {
+  background: var(--accent-bg);
+  color: var(--text-h);
+}
+
+.tagfield__empty {
+  padding: 8px 10px;
+  font-size: 14px;
+  color: var(--text);
 }
 
 /* One intrinsic track for every width instead of a breakpoint: the minimum
