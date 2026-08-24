@@ -15,7 +15,7 @@ export function CommentList({ recipeId }: { recipeId: number }) {
   const [sort, setSort] = useState<Sort>("newest");
 
   return (
-    <section>
+    <section className="comment-thread">
       <h2>Comments</h2>
 
       <label>
@@ -216,10 +216,10 @@ function CommentForm({
   }
 
   return (
-    <form onSubmit={onSubmit}>
+    <form className="comment-form" onSubmit={onSubmit}>
       {formError !== "" && <p role="alert">{formError}</p>}
 
-      <label>
+      <label className="comment-form__body">
         Add a comment
         <textarea
           value={body}

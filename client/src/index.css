@@ -874,6 +874,31 @@ main {
 
 /* --- comments --- */
 
+/* A text label followed directly by its control — the sort select, the
+   comment textarea, the file input — is the one shape the browser default
+   actively gets wrong: with no gap the label sinks below or crowds against
+   whatever it names. This is the same fix as .filters label and .quantity
+   label, a third time; a labeled-text-or-select-or-file control wants this
+   shape often enough that it is a real pattern, not a coincidence. */
+.comment-thread > label,
+.comment-form label {
+  display: flex;
+  flex-direction: column;
+  /* Compact by default — the select and the file input should sit at their
+     own width, not balloon to the full 1126px column the way a column-flex
+     child stretches to by default. */
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 14px;
+  margin-bottom: 12px;
+}
+
+/* The one control in this form that should stretch: a comment box cramped to
+   its own text width would be unusable. */
+.comment-form__body {
+  align-items: stretch;
+}
+
 .comments {
   list-style: none;
   padding: 0;
