@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { Link } from "react-router";
+import { Link, useLocation } from "react-router";
 
 import * as api from "../core/api";
 import { useAuth } from "../core/auth-context";
 import { asApiError } from "../core/client";
 import type { RatingResponse } from "../core/models";
+import { returnTo, withNext } from "../core/next";
 
 const STARS = [1, 2, 3, 4, 5];
 
@@ -27,6 +28,7 @@ interface Props {
 
 export function RatingWidget({ recipeId, average, count, userRating, onRated }: Props) {
   const { user } = useAuth();
+  const location = useLocation();
   const [hover, setHover] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState("");
@@ -123,7 +125,9 @@ export function RatingWidget({ recipeId, average, count, userRating, onRated }: 
 
       {user === null && (
         <p className="rating__summary">
-          <Link to="/login">Sign in</Link> to rate this recipe.
+          {/* Carries the recipe along: the offer is to rate *this* one, so
+              landing on the grid afterwards fails the sentence it just read. */}
+          <Link to={withNext("/login", returnTo(location))}>Sign in</Link> to rate this recipe.
         </p>
       )}
 

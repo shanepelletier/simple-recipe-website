@@ -1,9 +1,9 @@
 import { useState } from "react";
-import type { ReactNode, SubmitEvent } from "react";
-import { useNavigate, useSearchParams } from "react-router";
+import type { SubmitEvent } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router";
 
 import { asApiError } from "../core/client";
-import { safeNext } from "../core/next";
+import { nextDestination, safeNext } from "../core/next";
 
 interface Props {
   title: string;
@@ -14,7 +14,9 @@ interface Props {
   /** "current-password" signing in, "new-password" registering, so browsers
    *  offer to fill on one and to generate on the other. */
   passwordAutoComplete: "current-password" | "new-password";
-  footer: ReactNode;
+  /** The other credentials page. Named rather than passed as a finished link,
+   *  because where it points depends on `next` and only this component has it. */
+  alternate: { to: string; label: string };
 }
 
 // Sign in and register are the same form with a different verb, so they are
@@ -26,10 +28,16 @@ export function CredentialsForm({
   pendingLabel,
   action,
   passwordAutoComplete,
-  footer,
+  alternate,
 }: Props) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+
+  // Read once and used three times: to redirect after signing in, to say where
+  // that will be, and to hand the same destination to the other page — the
+  // whole point of arriving here from a guard is that it survives the detour.
+  const next = safeNext(searchParams.get("next"));
+  const destination = nextDestination(next);
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -50,7 +58,7 @@ export function CredentialsForm({
       await action(username, password);
       // replace: keeps /login out of history, so Back from the page you just
       // reached doesn't return you to a form you have already used.
-      navigate(safeNext(searchParams.get("next")), { replace: true });
+      navigate(next, { replace: true });
     } catch (reason) {
       const failure = asApiError(reason);
       // The API always answers with { error, fields } — one code path.
@@ -66,41 +74,66 @@ export function CredentialsForm({
   }
 
   return (
-    <form onSubmit={onSubmit} noValidate={false}>
-      <h1>{title}</h1>
+    <form className="auth" onSubmit={onSubmit} noValidate={false}>
+      {/* The heading and the line under it are one group, so the subtitle sits
+          against the title rather than at the form's own rhythm. */}
+      <div className="auth__heading">
+        <h1 className="auth__title">{title}</h1>
+        {/* Nothing said the guard had bounced you here — you clicked Shopping
+            list and got a sign-in form with no explanation. */}
+        {destination !== null && <p className="auth__intro">{destination}</p>}
+      </div>
 
       {formError !== "" && <p role="alert">{formError}</p>}
 
-      <label>
-        Username
-        <input
-          name="username"
-          value={username}
-          onChange={(event) => setUsername(event.target.value)}
-          autoComplete="username"
-          required
-        />
-      </label>
-      <FieldErrors messages={fieldErrors.username} />
+      {/* Each field is a label and the errors it produced, wrapped together:
+          a message about the password belongs to the password box, not to the
+          form's own spacing rhythm. */}
+      <div className="auth__field">
+        <label>
+          Username
+          <input
+            name="username"
+            value={username}
+            onChange={(event) => setUsername(event.target.value)}
+            autoComplete="username"
+            // The whole page is this form, so there is nothing else the caret
+            // could sensibly be in on arrival.
+            autoFocus
+            required
+          />
+        </label>
+        <FieldErrors messages={fieldErrors.username} />
+      </div>
 
-      <label>
-        Password
-        <input
-          name="password"
-          type="password"
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
-          autoComplete={passwordAutoComplete}
-          required
-        />
-      </label>
-      <FieldErrors messages={fieldErrors.password} />
+      <div className="auth__field">
+        <label>
+          Password
+          <input
+            name="password"
+            type="password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            autoComplete={passwordAutoComplete}
+            required
+          />
+        </label>
+        <FieldErrors messages={fieldErrors.password} />
+      </div>
 
-      <button type="submit" disabled={submitting}>
+      <button type="submit" className="auth__submit" disabled={submitting}>
         {submitting ? pendingLabel : submitLabel}
       </button>
 
-      <p>{footer}</p>
+      {/* Carries `next` across. Without it, a visitor bounced here from the
+          shopping list who turns out to need an account signs up and lands on
+          the grid — the destination surviving the detour to sign-in but not the
+          one further step to register. */}
+      <p className="auth__footer">
+        <Link to={next === "/" ? alternate.to : `${alternate.to}?next=${encodeURIComponent(next)}`}>
+          {alternate.label}
+        </Link>
+      </p>
     </form>
   );
 }
@@ -110,7 +143,7 @@ function FieldErrors({ messages }: { messages?: string[] }) {
     return null;
   }
   return (
-    <ul>
+    <ul className="field-errors" role="alert">
       {messages.map((message) => (
         <li key={message}>{message}</li>
       ))}

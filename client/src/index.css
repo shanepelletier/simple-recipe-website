@@ -1142,10 +1142,138 @@ main {
   margin: 0;
 }
 
+/* A form-level failure, in the one color this system keeps for one. Keyed on
+   the role rather than a class because every form in the app already announces
+   its failures this way and none of them were colored — a sign-in that didn't
+   work read in exactly the same ink as a sign-in that hadn't happened yet.
+   Restricted to the two inline elements: .conflict and .notice are alerts too,
+   and they are deliberately the herb wash rather than the error red. */
+p[role="alert"],
+span[role="alert"] {
+  color: var(--error);
+}
+
 .field-errors {
   list-style: none;
   padding: 0;
   margin: 4px 0;
   color: var(--error);
   font-size: 15px;
+}
+
+/* --- sign in / register --- */
+
+/* The one screen with nothing behind it: two fields, a button and a link, in a
+   1126px column they have no reason to fill. So the form stops being the page
+   and becomes an object on it, in the chrome a recipe card already uses — a 1px
+   rule and an 8px corner on paper, no shadow, because nothing here overlays
+   anything. 400px is the measure of a username rather than of the column
+   holding it; the same call that caps the filter bar's search at 340px and the
+   tag field at 520px instead of letting either take the slack.
+
+   Set below the top of the page rather than centered in it. Centering wants
+   `main` to become a flex container, and every other page renders several
+   children into it whose margins collapse today; a fixed 48px also leaves the
+   form in one place across viewport heights, which for a screen you are only
+   passing through is steadier than one that drifts with the window. */
+.auth {
+  width: 400px;
+  max-width: 100%;
+  box-sizing: border-box;
+  margin: 48px auto;
+  padding: 32px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* The title and the line naming where you were going are one group, on the
+   same 8px the fields use inside themselves. The 8px below is what the group
+   adds past the panel's own gap: the heading should stand further off the
+   fields than the fields stand off each other, or it reads as the first row of
+   the form rather than the name of it. */
+.auth__heading {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+/* Down from the page display size: 56px of Fraunces over a 400px panel is a
+   masthead on a note. This is the 36px cut the h1 already takes below 1024px
+   rather than a new size, and its margin gives way to the group's rhythm. */
+.auth__title {
+  margin: 0;
+  font-size: 36px;
+  line-height: 112%;
+  letter-spacing: -0.9px;
+  font-variation-settings:
+    "opsz" 30,
+    "SOFT" 60,
+    "WONK" 1;
+}
+
+/* Left at the muted default, the way everything that frames content rather
+   than being it is treated here: this is the note explaining why the form is
+   on screen, not the form. 16px so it can't be mistaken for a field label at
+   14px while staying plainly under the title. */
+.auth__intro {
+  font-size: 16px;
+}
+
+/* The shape .filters, .quantity and .comment-form all arrived at independently
+   for a labeled text control — column, 6px, 14px label — but stretched rather
+   than `align-items: flex-start`, because the panel is already the field's
+   width and an input shrunk to the word "Username" inside it would look like a
+   mistake. The wrapper carries the same 6px, so a field's errors sit against
+   the box that produced them while the panel keeps its 16px between fields. */
+.auth__field,
+.auth__field label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.auth__field label {
+  font-size: 14px;
+}
+
+.auth__field .field-errors {
+  margin: 0;
+}
+
+/* One action, so it takes the panel's width instead of sitting at its label's
+   width with the rest of the line empty. The extra 8px over the panel's gap
+   sets it apart from the fields it submits. Same chrome as every other button:
+   there is no filled variant here, and one screen doesn't get to invent one. */
+.auth__submit {
+  width: 100%;
+  margin-top: 8px;
+}
+
+/* Closed off by a rule, the way the shopping list separates its add-form: what
+   is below it leaves this page rather than acting on it. */
+.auth__footer {
+  margin-top: 8px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+/* The header's own link, reused — 15px, 600, and a transparent 2px border that
+   takes the accent on hover so gaining the mark doesn't move the line. This is
+   a navigation action that happens to be text, not a link inside a sentence;
+   those are still the gap the system hasn't filled. */
+.auth__footer a {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+}
+
+.auth__footer a:hover {
+  color: var(--text-h);
+  border-bottom-color: var(--accent);
 }

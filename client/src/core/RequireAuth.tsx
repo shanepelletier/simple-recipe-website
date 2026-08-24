@@ -2,6 +2,7 @@ import type { ReactElement } from "react";
 import { Navigate, useLocation } from "react-router";
 
 import { useAuth } from "./auth-context";
+import { withNext } from "./next";
 
 // Reads state rather than making a request: this runs on every navigation, and
 // an HTTP call here would make routing feel slow and could race. The
@@ -20,8 +21,11 @@ export function RequireAuth({ children }: { children: ReactElement }) {
     // Remember where they were headed so login can send them back. `replace`
     // keeps the bounce out of history — without it, Back returns to the
     // guarded page and bounces again.
-    const next = encodeURIComponent(location.pathname + location.search);
-    return <Navigate to={`/login?next=${next}`} replace />;
+    //
+    // Not returnTo(): a guarded page is never the grid and never a credentials
+    // page, so there is always a destination here, and null would mean the
+    // guard silently forgot one.
+    return <Navigate to={withNext("/login", location.pathname + location.search)} replace />;
   }
   return children;
 }

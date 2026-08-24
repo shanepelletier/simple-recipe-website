@@ -1,11 +1,12 @@
 import { useState } from "react";
 import type { SubmitEvent } from "react";
-import { Link } from "react-router";
+import { Link, useLocation } from "react-router";
 
 import * as api from "../core/api";
 import { useAuth } from "../core/auth-context";
 import { asApiError } from "../core/client";
 import type { Comment } from "../core/models";
+import { returnTo, withNext } from "../core/next";
 import { PHOTO_ACCEPT, usePhotoChoice } from "../core/photos";
 import { useApi } from "../core/useApi";
 
@@ -38,6 +39,7 @@ export function CommentList({ recipeId }: { recipeId: number }) {
 
 function Thread({ recipeId, sort }: { recipeId: number; sort: Sort }) {
   const { user } = useAuth();
+  const location = useLocation();
 
   // Page 1 comes from the loading hook, so it gets the race guard, the
   // loading flag and the error state for free.
@@ -90,7 +92,9 @@ function Thread({ recipeId, sort }: { recipeId: number; sort: Sort }) {
     <>
       {user === null ? (
         <p>
-          <Link to="/login">Sign in</Link> to leave a comment.
+          {/* Same as the rating prompt: the comment box is on this recipe, so
+              signing in has to come back to it. */}
+          <Link to={withNext("/login", returnTo(location))}>Sign in</Link> to leave a comment.
         </p>
       ) : (
         // A new comment is always the newest one, so where it goes depends on

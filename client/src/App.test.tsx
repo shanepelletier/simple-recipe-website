@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 import App from "./App";
 import { AuthContext } from "./core/auth-context";
 import type { AuthValue } from "./core/auth-context";
+import { nextDestination } from "./core/next";
 import { ROUTES } from "./core/routes";
 
 const noop = async () => {};
@@ -78,6 +79,28 @@ describe("routes", () => {
     renderAt(withParams(path), signedIn);
 
     expect((await page().findByRole("heading", { level: 1 })).textContent).not.toBe("Sign in");
+  });
+
+  // The bounce is only half the flow: the page it lands on has to say what it
+  // interrupted, or a guarded route added later quietly starts sending people
+  // to a sign-in form with no explanation. Swept from the same table for the
+  // same reason the guard itself is — a hand-kept list of routes that need a
+  // line would be exactly as easy to forget as the line.
+  it.for(guardedRoutes)("$path names itself on the page it bounces to", ({ path }) => {
+    expect(nextDestination(withParams(path))).not.toBeNull();
+  });
+
+  // Signing in from a public page is the other way to reach the form, and it
+  // used to lose where you were: the header's link was a bare /login, so a
+  // visitor who signed in from a recipe was returned to the grid.
+  it("keeps the page you were on when you sign in from the header", () => {
+    renderAt("/recipes/9", signedOut);
+
+    const header = within(screen.getByRole("banner"));
+
+    expect(header.getByRole("link", { name: "Sign in" }).getAttribute("href")).toBe(
+      "/login?next=%2Frecipes%2F9",
+    );
   });
 
   it("sends an unknown path to the grid", async () => {

@@ -1,13 +1,19 @@
 import { Suspense } from "react";
-import { Link, NavLink, Route, Routes, useNavigate } from "react-router";
+import { Link, NavLink, Route, Routes, useLocation, useNavigate } from "react-router";
 
 import { RequireAuth } from "./core/RequireAuth";
 import { useAuth } from "./core/auth-context";
+import { returnTo, withNext } from "./core/next";
 import { ROUTES } from "./core/routes";
 
 function Header() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  // Signing in from the header is not a decision to go to the grid — it is a
+  // decision to be signed in, made while standing on some page you meant to
+  // stay on.
+  const next = returnTo(location);
 
   async function handleSignOut() {
     await signOut();
@@ -37,8 +43,8 @@ function Header() {
       <div className="site-user">
         {user === null ? (
           <>
-            <Link to="/login">Sign in</Link>
-            <Link to="/register">Register</Link>
+            <Link to={withNext("/login", next)}>Sign in</Link>
+            <Link to={withNext("/register", next)}>Register</Link>
           </>
         ) : (
           <>

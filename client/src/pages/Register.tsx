@@ -1,5 +1,3 @@
-import { Link } from "react-router";
-
 import { CredentialsForm } from "../components/CredentialsForm";
 import { useAuth } from "../core/auth-context";
 
@@ -13,7 +11,7 @@ export default function Register() {
       pendingLabel="Creating account…"
       passwordAutoComplete="new-password"
       action={signUp}
-      footer={<Link to="/login">Already have one?</Link>}
+      alternate={{ to: "/login", label: "Already have one?" }}
     />
   );
 }
