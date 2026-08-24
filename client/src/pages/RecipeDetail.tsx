@@ -15,7 +15,7 @@ export default function RecipeDetail() {
   // beats sprinkling Number(id) through the file.
   const recipeId = Number(id);
 
-  const { data, loading, error, setData } = useApi(() => api.recipe(recipeId), [recipeId]);
+  const { data, loading, error, reload, setData } = useApi(() => api.recipe(recipeId), [recipeId]);
 
   if (loading) {
     return <p>Loading recipe…</p>;
@@ -24,8 +24,18 @@ export default function RecipeDetail() {
   if (error !== null) {
     // A missing recipe is a different thing from a broken server, and saying
     // so is the difference between "you followed a dead link" and "we're down".
+    // Only the second one gets a Retry: retrying a 404 just asks the same
+    // question again and gets the same answer.
+    const notFound = error.status === 404;
     return (
-      <h1>{error.status === 404 ? "That recipe doesn't exist." : "Couldn't load the recipe."}</h1>
+      <div className="state">
+        <p>{notFound ? "That recipe doesn't exist." : "Couldn't load the recipe."}</p>
+        {!notFound && (
+          <button type="button" onClick={reload}>
+            Retry
+          </button>
+        )}
+      </div>
     );
   }
 
