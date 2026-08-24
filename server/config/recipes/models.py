@@ -14,7 +14,7 @@ class Unit(models.Model):
     """A measurement, e.g. pound / cup / whole.
 
     `category` only groups the picker in the UI. Nothing converts between
-    units — see PLAN.md.
+    units.
     """
 
     class Category(models.TextChoices):
