@@ -761,7 +761,7 @@ main {
    rhythm, so a recipe's ingredients and steps don't visually change register
    between "being written" and "being read." Steps keep real numbering —
    counters rather than the native <ol> marker, because a browser numeral
-   can't be given Ink Muted the way the rest of the system's apparatus text
+   can't be given `var(--text)` the way the rest of the page's supporting text
    is, and unstyled black numerals would be the one un-tokenized thing on the
    page. */
 .detail__ingredients,
@@ -804,8 +804,9 @@ main {
   gap: 16px;
 }
 
-/* A status, not the ingredient itself — Ink Muted per the Apparatus Rule,
-   where the bracket rule above otherwise defaults every row to Ink. */
+/* A status, not the ingredient itself, so it takes the muted color everything
+   framing the content takes — the bracket above otherwise defaults every row
+   to the heading color. */
 .detail__ingredient-added {
   color: var(--text);
   font-size: 15px;
