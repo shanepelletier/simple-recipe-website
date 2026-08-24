@@ -8,38 +8,47 @@ import { RequireAuth } from "./RequireAuth";
 
 // The guard never calls these, so they only have to satisfy the type.
 const noop = async () => {};
-const base = { signIn: noop, signUp: noop, signOut: noop };
+const base = { justSignedOut: false, signIn: noop, signUp: noop, signOut: noop };
 
 const signedIn: AuthValue = {
   ...base,
   ready: true,
   user: { id: 1, username: "alice", is_staff: false, is_moderator: false },
 };
+// Never signed in, as opposed to having signed out — the guard treats those
+// differently, and saying which one this is used to be impossible.
 const signedOut: AuthValue = { ...base, ready: true, user: null };
+const afterSignOut: AuthValue = { ...signedOut, justSignedOut: true };
 const notReady: AuthValue = { ...base, ready: false, user: null };
 
 function LoginProbe() {
   return <p>login{useLocation().search}</p>;
 }
 
+// A function rather than a rendered result, so the same tree can be handed to
+// rerender() with a different session — which is the only way to express a
+// sign-out: the guard has to be the same instance either side of it.
+const guarded = (auth: AuthValue) => (
+  <AuthContext.Provider value={auth}>
+    <MemoryRouter initialEntries={["/shopping-list?a=1"]}>
+      <Routes>
+        <Route path="/" element={<p>the grid</p>} />
+        <Route path="/login" element={<LoginProbe />} />
+        <Route
+          path="/shopping-list"
+          element={
+            <RequireAuth>
+              <p>the list</p>
+            </RequireAuth>
+          }
+        />
+      </Routes>
+    </MemoryRouter>
+  </AuthContext.Provider>
+);
+
 function renderGuarded(auth: AuthValue) {
-  render(
-    <AuthContext.Provider value={auth}>
-      <MemoryRouter initialEntries={["/shopping-list?a=1"]}>
-        <Routes>
-          <Route path="/login" element={<LoginProbe />} />
-          <Route
-            path="/shopping-list"
-            element={
-              <RequireAuth>
-                <p>the list</p>
-              </RequireAuth>
-            }
-          />
-        </Routes>
-      </MemoryRouter>
-    </AuthContext.Provider>,
-  );
+  render(guarded(auth));
 }
 
 describe("RequireAuth", () => {
@@ -60,6 +69,22 @@ describe("RequireAuth", () => {
     renderGuarded(notReady);
 
     expect(screen.queryByText("the list")).toBeNull();
+    expect(screen.queryByText(/login/)).toBeNull();
+  });
+
+  // Signing out while standing on a guarded page looks identical to arriving
+  // at one anonymously — no user, guarded route — and wants the opposite
+  // answer. Sending this visitor to /login would carry a `next` back to the
+  // page they just left and ask them to sign in again immediately.
+  it("sends someone who signs out from inside to the grid, not back to login", async () => {
+    const { rerender } = render(guarded(signedIn));
+    expect(screen.getByText("the list")).toBeDefined();
+
+    // The session ending under a guard that had already admitted them, which
+    // is exactly what pressing Sign out does.
+    rerender(guarded(afterSignOut));
+
+    expect(await screen.findByText("the grid")).toBeDefined();
     expect(screen.queryByText(/login/)).toBeNull();
   });
 });

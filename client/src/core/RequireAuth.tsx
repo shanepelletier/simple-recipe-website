@@ -8,7 +8,7 @@ import { withNext } from "./next";
 // an HTTP call here would make routing feel slow and could race. The
 // provider's one startup call fills the state; the guard is then synchronous.
 export function RequireAuth({ children }: { children: ReactElement }) {
-  const { user, ready } = useAuth();
+  const { user, ready, justSignedOut } = useAuth();
   const location = useLocation();
 
   // A deep link in a fresh tab would otherwise run this before the startup
@@ -18,6 +18,17 @@ export function RequireAuth({ children }: { children: ReactElement }) {
     return null;
   }
   if (user === null) {
+    // They asked to leave, so let them: a bounce to /login here would carry a
+    // `next` back to the very page they just signed out of, and ask them to
+    // sign in again the instant they signed out.
+    //
+    // The decision lives here rather than in the header's sign-out handler
+    // because this guard cannot be beaten to it. navigate() is a transition,
+    // so a redirect fired alongside the sign-out — before it, after it, or
+    // wrapped in flushSync — still lands after this one and is overwritten.
+    if (justSignedOut) {
+      return <Navigate to="/" replace />;
+    }
     // Remember where they were headed so login can send them back. `replace`
     // keeps the bounce out of history — without it, Back returns to the
     // guarded page and bounces again.

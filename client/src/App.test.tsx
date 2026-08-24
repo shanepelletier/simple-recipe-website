@@ -1,5 +1,6 @@
-import { render, screen, within } from "@testing-library/react";
-import { MemoryRouter } from "react-router";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { useState } from "react";
+import { MemoryRouter, useLocation } from "react-router";
 import { describe, expect, it } from "vitest";
 
 import App from "./App";
@@ -9,7 +10,7 @@ import { nextDestination } from "./core/next";
 import { ROUTES } from "./core/routes";
 
 const noop = async () => {};
-const base = { ready: true, signIn: noop, signUp: noop, signOut: noop };
+const base = { ready: true, justSignedOut: false, signIn: noop, signUp: noop, signOut: noop };
 
 const signedIn: AuthValue = {
   ...base,
@@ -25,6 +26,55 @@ function renderAt(path: string, auth: AuthValue) {
       </MemoryRouter>
     </AuthContext.Provider>,
   );
+}
+
+function Where() {
+  return <p>at {useLocation().pathname}</p>;
+}
+
+/**
+ * Renders signed in, with a sign-out that really signs you out and a probe
+ * reporting the path.
+ *
+ * Both halves are needed. What sign-out does depends on the user going away,
+ * which the fixed AuthValue above cannot express; and it leaves the visitor on
+ * a page whose *content* is unchanged, so the assertion has to be about where
+ * the app went rather than what it drew.
+ */
+function renderSignOutAt(path: string) {
+  function Harness() {
+    const [user, setUser] = useState(signedIn.user);
+    const auth: AuthValue = {
+      ...base,
+      user,
+      justSignedOut: user === null,
+      signOut: async () => setUser(null),
+    };
+    return (
+      <AuthContext.Provider value={auth}>
+        <MemoryRouter initialEntries={[path]}>
+          <App />
+          <Where />
+        </MemoryRouter>
+      </AuthContext.Provider>
+    );
+  }
+  render(<Harness />);
+  return () => screen.getByText(/^at /).textContent;
+}
+
+/**
+ * Clicks Sign out and waits for the user to actually be gone.
+ *
+ * Where the app ends up is asserted with waitFor rather than after a flush,
+ * because a redirect out of a guarded page is a router transition and neither
+ * act() nor yielding a macrotask commits one. The button disappearing only
+ * proves the user went away; it says nothing about navigation yet.
+ */
+async function signOutAndSettle() {
+  fireEvent.click(screen.getByRole("button", { name: "Sign out" }));
+
+  await waitFor(() => expect(screen.queryByRole("button", { name: "Sign out" })).toBeNull());
 }
 
 /**
@@ -101,6 +151,29 @@ describe("routes", () => {
     expect(header.getByRole("link", { name: "Sign in" }).getAttribute("href")).toBe(
       "/login?next=%2Frecipes%2F9",
     );
+  });
+
+  it("leaves you on a public page when you sign out", async () => {
+    // The recipe reads the same signed out, so being moved off it would be a
+    // penalty for using the control.
+    const at = renderSignOutAt("/recipes/9");
+
+    await signOutAndSettle();
+
+    // Nothing to wait for, because nothing should move: the guard is not on a
+    // public page and the header no longer redirects.
+    expect(at()).toBe("at /recipes/9");
+  });
+
+  it("sends you to the grid when you sign out of a page you can no longer see", async () => {
+    // And to the grid rather than to /login: the guard would otherwise bounce
+    // an anonymous visitor there carrying a `next` back to the list, asking
+    // them to sign in again the instant they signed out.
+    const at = renderSignOutAt("/shopping-list");
+
+    await signOutAndSettle();
+
+    await waitFor(() => expect(at()).toBe("at /"));
   });
 
   it("sends an unknown path to the grid", async () => {

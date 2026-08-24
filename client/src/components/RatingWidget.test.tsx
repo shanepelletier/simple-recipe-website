@@ -10,6 +10,7 @@ import { RatingWidget } from "./RatingWidget";
 const noop = async () => {};
 const signedIn: AuthValue = {
   ready: true,
+  justSignedOut: false,
   signIn: noop,
   signUp: noop,
   signOut: noop,

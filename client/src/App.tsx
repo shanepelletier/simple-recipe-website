@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { Link, NavLink, Route, Routes, useLocation, useNavigate } from "react-router";
+import { Link, NavLink, Route, Routes, useLocation } from "react-router";
 
 import { RequireAuth } from "./core/RequireAuth";
 import { useAuth } from "./core/auth-context";
@@ -8,16 +8,19 @@ import { ROUTES } from "./core/routes";
 
 function Header() {
   const { user, signOut } = useAuth();
-  const navigate = useNavigate();
   const location = useLocation();
   // Signing in from the header is not a decision to go to the grid — it is a
   // decision to be signed in, made while standing on some page you meant to
   // stay on.
   const next = returnTo(location);
 
-  async function handleSignOut() {
-    await signOut();
-    navigate("/");
+  // No redirect here on purpose. A recipe reads the same signed out as signed
+  // in, so moving off it would be a penalty for using the control; a page that
+  // signing out genuinely takes away is RequireAuth's to unmount, and it sends
+  // the visitor to the grid itself. Anything this handler navigated to would be
+  // overwritten by that guard anyway.
+  function handleSignOut() {
+    void signOut();
   }
 
   return (

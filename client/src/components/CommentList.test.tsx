@@ -9,6 +9,7 @@ import { CommentList } from "./CommentList";
 
 const signedIn: AuthValue = {
   ready: true,
+  justSignedOut: false,
   signIn: async () => {},
   signUp: async () => {},
   signOut: async () => {},
