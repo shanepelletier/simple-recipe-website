@@ -197,7 +197,8 @@ textarea {
 button,
 input,
 select,
-textarea {
+textarea,
+.btn-link {
   font: inherit;
   font-size: 15px;
   color: var(--text-h);
@@ -214,7 +215,8 @@ textarea {
 button:hover,
 input:hover,
 select:hover,
-textarea:hover {
+textarea:hover,
+.btn-link:hover {
   border-color: var(--accent-border);
 }
 
@@ -230,7 +232,8 @@ textarea {
   resize: vertical;
 }
 
-button {
+button,
+.btn-link {
   font-weight: 600;
   padding: 0 16px;
   cursor: pointer;
@@ -244,7 +247,8 @@ button {
 /* The same move the recipe card makes on hover: the border takes the accent
    and a wash comes up underneath. A filled green button would be the accent
    used as a surface, which this system doesn't do. */
-button:hover:not(:disabled) {
+button:hover:not(:disabled),
+.btn-link:hover {
   border-color: var(--accent-border);
   background: var(--accent-bg);
 }
@@ -256,6 +260,14 @@ button:disabled {
 
 button:disabled:hover {
   border-color: var(--border);
+}
+
+/* A styled <a> for when an action in a button row has to navigate instead of
+   handle a click — an Edit link beside Delete and Copy buttons, say. Folded
+   into the selectors above rather than duplicating them; this rule only
+   covers what a button's `border: 0` reset can't: the underline. */
+.btn-link {
+  text-decoration: none;
 }
 
 /* Native chrome swapped for the system's own, with the disclosure arrow drawn
@@ -694,8 +706,16 @@ main {
 
 /* --- detail page --- */
 
+/* 16:9 of the full 1126px column is 633px tall — on a 768px laptop viewport
+   that alone pushes the title past the fold, before the header and margins
+   even count. The cap keeps the reservation (no layout shift once the photo
+   decodes) while stopping the box from scaling past what a hero needs to be;
+   `object-fit: cover` on the image already tolerates the box being a
+   different ratio than 16:9 once the cap engages. Never hit on mobile, where
+   16:9 of a phone-width column is well under 480px on its own. */
 .detail__photo {
   aspect-ratio: 16 / 9;
+  max-height: 480px;
   background: var(--code-bg);
   border-radius: 8px;
   overflow: hidden;
@@ -716,11 +736,60 @@ main {
   margin: 24px 0;
 }
 
+/* --- detail lists --- */
+
+/* The read-only twin of RecipeForm's editable .rows: same bracket, same
+   rhythm, so a recipe's ingredients and steps don't visually change register
+   between "being written" and "being read." Steps keep real numbering —
+   counters rather than the native <ol> marker, because a browser numeral
+   can't be given Ink Muted the way the rest of the system's apparatus text
+   is, and unstyled black numerals would be the one un-tokenized thing on the
+   page. */
+.detail__ingredients,
+.detail__steps {
+  list-style: none;
+  counter-reset: step;
+  padding: 0;
+  margin: 0 0 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.detail__ingredients > li,
+.detail__steps > li {
+  border-left: 2px solid var(--border);
+  padding-left: 12px;
+  color: var(--text-h);
+}
+
+.detail__steps > li {
+  counter-increment: step;
+}
+
+.detail__steps > li::before {
+  content: counter(step) ".";
+  color: var(--text);
+  margin-right: 6px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Packed rather than spread edge to edge: at the column's full width,
+   `space-between` stranded the button nearly 900px from the text it belongs
+   to, an isolated word on the far right of an otherwise empty row. Matches
+   how .shopping__row already keeps its own Remove button close to its text. */
 .detail__ingredient {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  gap: 16px;
+}
+
+/* A status, not the ingredient itself — Ink Muted per the Apparatus Rule,
+   where the bracket rule above otherwise defaults every row to Ink. */
+.detail__ingredient-added {
+  color: var(--text);
+  font-size: 15px;
 }
 
 /* --- rating widget --- */

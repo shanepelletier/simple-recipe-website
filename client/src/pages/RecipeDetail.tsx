@@ -171,7 +171,7 @@ function Loaded({ recipe, onRated }: { recipe: Recipe; onRated: (r: RatingRespon
       )}
 
       <h2>Ingredients</h2>
-      <ul>
+      <ul className="detail__ingredients">
         {recipe.ingredients.map((item) => (
           // The server's formatter is the single source of this string.
           // Rebuilding it here would be a second implementation of plurals
@@ -180,10 +180,20 @@ function Loaded({ recipe, onRated }: { recipe: Recipe; onRated: (r: RatingRespon
             <span>{item.display}</span>
             {user !== null &&
               (addedIngredientIds.includes(item.id) ? (
-                <span> — added</span>
+                <span className="detail__ingredient-added">Added</span>
               ) : (
-                <button type="button" onClick={() => onAddIngredient(item.id)} disabled={busy}>
-                  Add to shopping list
+                // "Add", not "Add to shopping list": the row already says
+                // which ingredient, and seven full-length copies of the same
+                // four words read as a wall of text. The full context still
+                // reaches assistive tech through aria-label — matching how
+                // the tag field's own remove buttons carry their target.
+                <button
+                  type="button"
+                  onClick={() => onAddIngredient(item.id)}
+                  disabled={busy}
+                  aria-label={`Add ${item.display} to shopping list`}
+                >
+                  Add
                 </button>
               ))}
           </li>
@@ -191,7 +201,7 @@ function Loaded({ recipe, onRated }: { recipe: Recipe; onRated: (r: RatingRespon
       </ul>
 
       <h2>Steps</h2>
-      <ol>
+      <ol className="detail__steps">
         {recipe.steps.map((step) => (
           <li key={step.id}>{step.text}</li>
         ))}
@@ -202,7 +212,9 @@ function Loaded({ recipe, onRated }: { recipe: Recipe; onRated: (r: RatingRespon
       <div className="detail__actions">
         {recipe.can_edit && (
           <>
-            <Link to={`/recipes/${recipe.id}/edit`}>Edit</Link>
+            <Link to={`/recipes/${recipe.id}/edit`} className="btn-link">
+              Edit
+            </Link>
             <button type="button" onClick={onDelete} disabled={busy}>
               Delete
             </button>
