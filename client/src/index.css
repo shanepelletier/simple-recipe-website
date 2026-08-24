@@ -1,27 +1,42 @@
 :root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
+  /* Neutrals carry a warm cast rather than a grey one, so the paper surfaces
+     and the text sitting on them belong to the same light. */
+  --text: #6b6459;
+  --text-h: #14120c;
+  --bg: #fffefb;
+  --border: #e6e3da;
   --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
+  --accent: #4a6b3d;
+  /* 15%, not the 10% that reads as plain grey on paper. The wash has to be
+     legible as *the accent* on a tag chip, or the chips are just pills. */
+  --accent-bg: rgb(74 107 61 / 15%);
+  --accent-border: rgb(74 107 61 / 45%);
   --social-bg: rgba(244, 243, 236, 0.5);
   --shadow: rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
 
-  /* Two rating layers that are meant to overlap. The user's own colour
+  /* Two rating layers that are meant to overlap. The user's own color
      carries alpha on purpose, so a star carrying both reads as a third tone
-     rather than hiding the average underneath it. */
-  --rating-average: #e0a800;
-  --rating-user: rgb(170 59 255 / 65%);
+     rather than hiding the average underneath it.
 
-  --sans: system-ui, "Segoe UI", Roboto, sans-serif;
-  --heading: system-ui, "Segoe UI", Roboto, sans-serif;
+     The average stays amber while the accent is green: a star showing both has
+     to read as two separate marks, which it can't do if the two layers sit in
+     the same hue family. */
+  --rating-average: #e0a800;
+  --rating-user: rgb(74 107 61 / 65%);
+
+  --error: #b3261e;
+
+  --sans: "Source Sans 3 Variable", system-ui, "Segoe UI", Roboto, sans-serif;
+  --heading: "Fraunces Variable", Georgia, "Times New Roman", serif;
   --mono: ui-monospace, Consolas, monospace;
 
   font: 18px/145% var(--sans);
   letter-spacing: 0.18px;
+
+  /* Quantities are the whole point of a structured ingredient, so digits get
+     the same width everywhere they appear: a column of them lines up, and a
+     value doesn't jitter sideways as it's typed. */
+  font-variant-numeric: tabular-nums;
   color-scheme: light dark;
   color: var(--text);
   background: var(--bg);
@@ -37,49 +52,87 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
+    --text: #a8a294;
+    --text-h: #f5f3ec;
+    --bg: #1a1915;
+    --border: #33312a;
+    --code-bg: #232219;
+    /* Lifted well above the light-mode green: the same #4a6b3d on a dark
+       surface reads as a smudge rather than as a color. */
+    --accent: #9dbb85;
+    --accent-bg: rgb(157 187 133 / 15%);
+    --accent-border: rgb(157 187 133 / 50%);
+    --social-bg: rgba(35, 34, 25, 0.5);
     --shadow: rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
     --rating-average: #f0c040;
-    --rating-user: rgb(192 132 252 / 65%);
+    --rating-user: rgb(157 187 133 / 65%);
+
+    --error: #f2b8b5;
   }
 }
 
+/* The column is 1126px of *content*, so the gutter is padding rather than a
+   narrower max-width: at desktop the page is unchanged, and below 1174px the
+   text stops short of the viewport edge instead of running into it. */
 #root {
-  width: 1126px;
+  width: calc(1126px + 2 * 24px);
   max-width: 100%;
   margin: 0 auto;
+  padding: 0 24px;
   min-height: 100svh;
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
+
+  @media (max-width: 1024px) {
+    padding: 0 16px;
+  }
 }
 
 body {
   margin: 0;
 }
 
+/* Fraunces carries four axes and only one of them is weight. `opsz` is the
+   one that matters most: at display sizes it sharpens the contrast and tightens
+   the fit, and left at its default a 56px heading renders with the chunky
+   proportions meant for captions. SOFT rounds the terminals off the sharp
+   default, and WONK swaps in the angled single-storey g and italic-ish forms
+   the face is named for — together they're what makes this read as written
+   rather than typeset. */
 h1,
 h2 {
   font-family: var(--heading);
   font-weight: 500;
   color: var(--text-h);
+  font-variation-settings:
+    "SOFT" 40,
+    "WONK" 1;
+  text-wrap: balance;
 }
 
 h1 {
   font-size: 56px;
+  line-height: 108%;
   letter-spacing: -1.68px;
   margin: 32px 0;
+  /* opsz well below the actual pixel size, deliberately. Driven to 72 the face
+     goes Didone — thin hairlines, sharp spurs, a fashion masthead. Held at 40
+     it keeps the sturdier strokes of a text cut while still tightening the fit,
+     which is the difference between a magazine and a notebook. */
+  font-variation-settings:
+    "opsz" 40,
+    "SOFT" 60,
+    "WONK" 1;
   @media (max-width: 1024px) {
     font-size: 36px;
+    line-height: 112%;
+    letter-spacing: -0.9px;
     margin: 20px 0;
+    font-variation-settings:
+      "opsz" 30,
+      "SOFT" 60,
+      "WONK" 1;
   }
 }
 h2 {
@@ -87,6 +140,10 @@ h2 {
   line-height: 118%;
   letter-spacing: -0.24px;
   margin: 0 0 8px;
+  font-variation-settings:
+    "opsz" 36,
+    "SOFT" 40,
+    "WONK" 1;
   @media (max-width: 1024px) {
     font-size: 20px;
   }
@@ -137,9 +194,17 @@ code {
   object-fit: cover;
 }
 
+/* Still Fraunces, but back down the optical axis: a recipe name is set at body
+   size, and the display cut's tight fit and high contrast fall apart there. */
 .card__name {
   font-size: 18px;
+  line-height: 128%;
+  letter-spacing: -0.1px;
   margin: 12px 12px 4px;
+  font-variation-settings:
+    "opsz" 20,
+    "SOFT" 40,
+    "WONK" 1;
 }
 
 .card__rating,
@@ -474,11 +539,16 @@ code {
 /* Smaller than a section heading elsewhere, and heavier: this is the name of a
    thing to buy rather than a part of the page, and at 24px it competed with the
    lines it is supposed to be gathering. */
+/* And in the sans, unlike every other h2. The serif marks headings you read
+   past; this one is a line you scan against a shelf, so it takes the face the
+   quantities underneath it are set in. */
 .shopping__group h2 {
+  font-family: var(--sans);
   font-size: 17px;
   font-weight: 600;
   letter-spacing: 0;
   margin: 0;
+  font-variation-settings: normal;
 }
 
 /* Indented under its heading and sharing the recipe form's left rule, so two
@@ -560,12 +630,6 @@ code {
   list-style: none;
   padding: 0;
   margin: 4px 0;
-  color: #b3261e;
+  color: var(--error);
   font-size: 15px;
-}
-
-@media (prefers-color-scheme: dark) {
-  .field-errors {
-    color: #f2b8b5;
-  }
 }
