@@ -15,6 +15,21 @@ dependencies = [
 [tool.uv]
 package = false
 
+# Quarantines newly published versions from resolution. The compromise-a-
+# package attack depends on the bad release being installed in the hours
+# before anyone notices and yanks it, and nothing here is urgent enough to
+# want that release the day it lands.
+#
+# A fixed date rather than the rolling `"7 days"` form, which is unusable in a
+# repo whose own tooling is recent: ruff and semgrep were both published
+# inside a rolling week, so the window excluded the versions uv.lock already
+# pinned and every `uv run` failed to resolve. A date only ever moves when
+# someone moves it, which also makes adding a dependency a deliberate act —
+# bump this line to today, and you have consciously decided the package you
+# are adding is old enough to trust. Only affects resolution; `uv sync
+# --frozen` in the Dockerfile installs what the lockfile already pins.
+exclude-newer = "7 days"
+
 [dependency-groups]
 dev = [
     "bandit[toml]>=1.9.4",
@@ -23,7 +38,8 @@ dev = [
     "mypy>=2.3.1",
     "pytest>=9.1.1",
     "pytest-django>=4.14.0",
-    "ruff>=0.16.4",
+    "ruff>=0.16.3",
+    "semgrep>=1.173.0",
 ]
 
 [tool.pytest.ini_options]

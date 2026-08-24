@@ -3,3 +3,12 @@ __pycache__
 *.py[oc]
 .env
 .git
+
+# Runtime output, not application source. Both are .gitignored for the same
+# reason; excluding them here too matters more, since without it whatever
+# photos and collectstatic output exist on the host from local dev get baked
+# into the image root-owned, ahead of the Dockerfile's own chown of these
+# same paths — a fresh deploy would ship a developer's laptop test data
+# instead of starting from the empty directories the volumes expect.
+config/media
+config/staticfiles

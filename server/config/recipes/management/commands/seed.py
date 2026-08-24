@@ -7,6 +7,7 @@ from uuid import uuid4
 from accounts.models import User
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import Group, Permission
+from django.contrib.auth.password_validation import validate_password
 from django.core.files.base import ContentFile
 from django.core.management import call_command
 from django.core.management.base import BaseCommand, CommandError
@@ -34,7 +35,13 @@ DEMO_USERNAMES = ("admin", "moderator", "alice", "bob")
 # testing the demo that login is actually checking a password and not just
 # comparing against a value baked into the client or docs. The seed command
 # prints these at the end — that's the only place they're recorded.
-DEMO_PASSWORDS = {username: f"{username}-{secrets.token_hex(3)}" for username in DEMO_USERNAMES}
+#
+# Deliberately not prefixed with the username, mnemonic as that would be:
+# these go through the same AUTH_PASSWORD_VALIDATORS as a real signup, and
+# UserAttributeSimilarityValidator rejects anything as close to the username
+# as "moderator-9be21c" is. Demo credentials that the project's own rules
+# would refuse are the wrong thing to be handing testers.
+DEMO_PASSWORDS = {username: secrets.token_urlsafe(12) for username in DEMO_USERNAMES}
 
 # Cycled by index so every recipe gets a distinct-ish placeholder colour.
 PHOTO_COLOURS = [
@@ -141,6 +148,11 @@ class Command(BaseCommand):
             user, _ = User.objects.get_or_create(username=username)
             user.is_staff = is_staff
             user.is_superuser = is_superuser
+            # Held to the same rules a signup is. Seeded accounts are the ones
+            # a reviewer actually logs in with, so a generator that quietly
+            # drifted into producing passwords the site itself would reject
+            # should fail the seed, not survive it.
+            validate_password(DEMO_PASSWORDS[username], user=user)
             user.set_password(DEMO_PASSWORDS[username])
             user.save()
             if group is not None:

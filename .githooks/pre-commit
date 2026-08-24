@@ -25,6 +25,17 @@ staged_in() {
   printf '%s\n' "$staged" | grep -q "^$1/"
 }
 
+if staged_in server || staged_in client; then
+  # Run from server/, because that is the uv project semgrep is a dev
+  # dependency of — `uv run` at the root finds no pyproject.toml and fails to
+  # spawn it at all. Scan the whole tree regardless: the rules that matter here
+  # cover the Dockerfiles and the packaging files as much as the Python.
+  #
+  # --error is what makes this a gate. Semgrep prints findings and exits 0 by
+  # default, so without it the step is decoration.
+  (cd "$root/server" && uv run semgrep --config=p/default --error --quiet "$root")
+fi
+
 if staged_in server; then
   cd "$root/server"
   uv run ruff check .
