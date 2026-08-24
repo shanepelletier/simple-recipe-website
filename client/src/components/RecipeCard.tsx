@@ -42,7 +42,9 @@ export function RecipeCard({ recipe }: { recipe: RecipeCardModel }) {
         </ul>
       )}
 
-      <p className="card__owner">{recipe.owner}</p>
+      {/* "by alice", matching the detail page. The bare username read as a
+          label whose meaning you had to infer from its position. */}
+      <p className="card__owner">by {recipe.owner}</p>
     </Link>
   );
 }

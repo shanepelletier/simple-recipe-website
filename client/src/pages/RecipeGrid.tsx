@@ -115,8 +115,13 @@ export default function RecipeGrid() {
     <>
       <h1>Recipes</h1>
 
+      {/* Source order is the visual order and the tab order: the three narrow
+          controls sit on one line, and the tag checkboxes take the line below
+          because there are eight of them. Laying this out with CSS `order`
+          instead would leave someone tabbing through it jumping around the
+          row. */}
       <div className="filters">
-        <label>
+        <label className="filters__search">
           Search
           <input
             type="search"
@@ -124,22 +129,6 @@ export default function RecipeGrid() {
             onChange={(event) => onSearchChange(event.target.value)}
           />
         </label>
-
-        {/* Checked tags AND together — a recipe must carry all of them —
-            matching how the server's repeating `?tag=` filters. */}
-        <fieldset className="tag-filter">
-          <legend>Tags</legend>
-          {(tags.data?.results ?? []).map((tag) => (
-            <label key={tag.id}>
-              <input
-                type="checkbox"
-                checked={(query.tag ?? []).includes(tag.name)}
-                onChange={(event) => toggleTag(tag.name, event.target.checked)}
-              />
-              {tag.name}
-            </label>
-          ))}
-        </fieldset>
 
         {/* The label is what makes the bare numbers mean anything: this is a
             threshold, so 3 shows 3, 4 and 5. "Any" is not the same as 1 —
@@ -179,6 +168,22 @@ export default function RecipeGrid() {
             Clear filters
           </button>
         )}
+
+        {/* Checked tags AND together — a recipe must carry all of them —
+            matching how the server's repeating `?tag=` filters. */}
+        <fieldset className="tag-filter">
+          <legend>Tags</legend>
+          {(tags.data?.results ?? []).map((tag) => (
+            <label key={tag.id}>
+              <input
+                type="checkbox"
+                checked={(query.tag ?? []).includes(tag.name)}
+                onChange={(event) => toggleTag(tag.name, event.target.checked)}
+              />
+              {tag.name}
+            </label>
+          ))}
+        </fieldset>
       </div>
 
       <Results
@@ -224,13 +229,24 @@ function Results({
     );
   }
 
-  // Skeletons rather than a spinner or a blank screen, at the card's own
-  // aspect ratio so nothing moves when the real cards arrive.
+  // Skeletons rather than a spinner or a blank screen, and built from the same
+  // parts as a real card — photo box plus four text lines — rather than a bare
+  // 4:3 block. A block only reserves the height of the photo, so the grid still
+  // jumped by the height of the name, rating, tags and owner at the moment the
+  // results landed, which is the exact reflow the skeletons exist to prevent.
   if (loading || data === null) {
     return (
       <div className="grid" aria-busy="true">
         {Array.from({ length: 8 }, (_, index) => (
-          <div key={index} className="card card--skeleton" />
+          <div key={index} className="card card--skeleton" aria-hidden="true">
+            <div className="card__photo" />
+            <div className="card__lines">
+              <span className="card__line card__line--name" />
+              <span className="card__line card__line--rating" />
+              <span className="card__line card__line--tags" />
+              <span className="card__line card__line--owner" />
+            </div>
+          </div>
         ))}
       </div>
     );

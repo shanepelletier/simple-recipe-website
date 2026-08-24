@@ -26,6 +26,11 @@
 
   --error: #b3261e;
 
+  /* Drawn, not typed: the select's disclosure arrow as an inline SVG. It is a
+     token per scheme rather than one image, because the stroke has to be a
+     color from the palette and an SVG data URI can't read a custom property. */
+  --select-arrow: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="8" fill="none"><path d="M1 1.75 6 6.25l5-4.5" stroke="%236b6459" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg>');
+
   --sans: "Source Sans 3 Variable", system-ui, "Segoe UI", Roboto, sans-serif;
   --heading: "Fraunces Variable", Georgia, "Times New Roman", serif;
   --mono: ui-monospace, Consolas, monospace;
@@ -68,6 +73,8 @@
     --rating-user: rgb(157 187 133 / 65%);
 
     --error: #f2b8b5;
+
+    --select-arrow: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="8" fill="none"><path d="M1 1.75 6 6.25l5-4.5" stroke="%23a8a294" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg>');
   }
 }
 
@@ -163,6 +170,182 @@ code {
   background: var(--code-bg);
 }
 
+/* --- controls --- */
+
+/* One focus treatment for everything focusable. `:focus-visible` rather than
+   `:focus` so a mouse click on a card doesn't leave a ring behind, while
+   tabbing still shows one. The offset keeps it clear of the 1px borders the
+   controls already carry instead of sitting on top of them. */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* The two browser surfaces nobody draws. Left alone they ship the platform's
+   own blue, which belongs to no design system and is the loudest color on an
+   otherwise warm page. */
+::selection {
+  background: var(--accent-bg);
+  color: var(--text-h);
+}
+
+input,
+textarea {
+  caret-color: var(--accent);
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  font-size: 15px;
+  color: var(--text-h);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-sizing: border-box;
+  /* Tall enough to hit without looking, because the shopping list gets used
+     one-handed in a kitchen. */
+  min-height: 44px;
+  padding: 0 12px;
+}
+
+button:hover,
+input:hover,
+select:hover,
+textarea:hover {
+  border-color: var(--accent-border);
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--accent);
+}
+
+textarea {
+  padding: 10px 12px;
+  line-height: 145%;
+  resize: vertical;
+}
+
+button {
+  font-weight: 600;
+  padding: 0 16px;
+  cursor: pointer;
+  /* Centers the label against `min-height` without a line-height guess. */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+/* The same move the recipe card makes on hover: the border takes the accent
+   and a wash comes up underneath. A filled green button would be the accent
+   used as a surface, which this system doesn't do. */
+button:hover:not(:disabled) {
+  border-color: var(--accent-border);
+  background: var(--accent-bg);
+}
+
+button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+button:disabled:hover {
+  border-color: var(--border);
+}
+
+/* Native chrome swapped for the system's own, with the disclosure arrow drawn
+   rather than typed. It is a background image per scheme instead of one glyph,
+   because a text arrow inherits the font and goes stale against a drawn UI. */
+select {
+  appearance: none;
+  padding-right: 36px;
+  background-image: var(--select-arrow);
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  cursor: pointer;
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+  /* Native controls kept on purpose: they arrive with the right semantics,
+     keyboard behavior and platform affordances. Only the color is ours. */
+  appearance: auto;
+  accent-color: var(--accent);
+  width: 18px;
+  height: 18px;
+  min-height: 0;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  cursor: pointer;
+}
+
+input[type="file"] {
+  padding: 10px 12px;
+  cursor: pointer;
+}
+
+/* --- site header --- */
+
+.site-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 24px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.site-nav,
+.site-user {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 20px;
+}
+
+.site-nav a,
+.site-user a {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  text-decoration: none;
+  padding: 8px 0;
+  /* Transparent rather than absent, so gaining the mark doesn't move the row. */
+  border-bottom: 2px solid transparent;
+}
+
+.site-nav a:hover,
+.site-user a:hover {
+  color: var(--text-h);
+}
+
+/* The accent doing what it does everywhere else in this app: marking the one
+   thing that is currently true. */
+.site-nav a.active {
+  color: var(--text-h);
+  border-bottom-color: var(--accent);
+}
+
+.site-user__name {
+  font-size: 15px;
+  color: var(--text-h);
+}
+
+main {
+  /* Takes the slack in the column, so a short page still puts the footerless
+     bottom edge at the bottom of the viewport rather than mid-screen. */
+  flex: 1;
+}
+
 /* --- recipe card --- */
 
 .card {
@@ -205,12 +388,29 @@ code {
     "opsz" 20,
     "SOFT" 40,
     "WONK" 1;
+
+  /* The cards get narrower than the desktop track well before the root size
+     steps down, and a two-up phone column is the tightest measure a recipe
+     name has to survive. */
+  @media (max-width: 1024px) {
+    font-size: 16px;
+    font-variation-settings:
+      "opsz" 18,
+      "SOFT" 40,
+      "WONK" 1;
+  }
 }
 
-.card__rating,
-.card__owner {
+.card__rating {
   margin: 0 12px;
   font-size: 15px;
+}
+
+/* A step below the rating rather than level with it. Both are apparatus, but
+   the rating is the one people sort and filter on; the author is a footnote. */
+.card__owner {
+  margin: 0 12px;
+  font-size: 13px;
 }
 
 .card__tags {
@@ -234,37 +434,99 @@ code {
   margin-bottom: 12px;
 }
 
-/* Same footprint as a real card, so nothing moves when the results land. */
+/* Same footprint as a real card, so nothing moves when the results land — and
+   that means the text block too, not just the photo. The four bars stand in for
+   the name, rating, tag row and author, at the heights those actually occupy. */
 .card--skeleton {
-  aspect-ratio: 4 / 3;
-  height: auto;
-  background: var(--code-bg);
   border-style: dashed;
+}
+
+/* Measured against a real card, not guessed: 14 + 16 padding, four bars and
+   three 22px gaps come to the 174.4px a card's text block actually occupies,
+   which lands the skeleton on the same 377px total.
+
+   The gaps look large next to the bar heights because the lines they stand in
+   for are taller than their type: `:root` sets line-height as a percentage, so
+   it computes to a fixed 26.1px that every child inherits whatever its own font
+   size is. The 13px author line still occupies 26px.
+
+   The photo above scales with the column and so needs no matching. A name that
+   wraps to two lines is still taller than this — no fixed skeleton can track
+   that, and matching the common case is the point. */
+.card__lines {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  padding: 14px 12px 16px;
+}
+
+.card__line {
+  display: block;
+  background: var(--code-bg);
+  border-radius: 999px;
+}
+
+.card__line--name {
+  width: 72%;
+  height: 20px;
+}
+
+.card__line--rating {
+  width: 40%;
+  height: 15px;
+}
+
+.card__line--tags {
+  width: 58%;
+  height: 28px;
+}
+
+.card__line--owner {
+  width: 30%;
+  height: 15px;
 }
 
 /* --- grid page --- */
 
+/* Two rows rather than one 1126px-wide line of twelve controls. The narrow
+   controls cluster at the left and the eight tag checkboxes take the row
+   below, so the bar reads as "search, refine, sort — then narrow by tag"
+   instead of sending the eye across the full width to reach Sort. The rule
+   underneath closes the group off from the results. */
 .filters {
   display: flex;
   flex-wrap: wrap;
   align-items: end;
   gap: 12px;
   margin: 0 0 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border);
 }
 
 .filters label {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
   font-size: 14px;
 }
 
+/* Grows into the space the other controls don't need, but stops well short of
+   the full width — a 1000px search field looks like a mistake. */
+.filters__search {
+  flex: 1 1 240px;
+  max-width: 340px;
+}
+
+/* `flex-basis: 100%` is what breaks the row: the fieldset can never share a
+   line, so it always starts the second one. */
 .tag-filter {
+  flex-basis: 100%;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 4px 12px;
+  gap: 2px 20px;
   border: none;
+  margin: 0;
   padding: 0;
   font-size: 14px;
 }
@@ -272,26 +534,52 @@ code {
 .tag-filter legend {
   font-size: 14px;
   padding: 0;
+  margin-bottom: 6px;
 }
 
+/* Padding rather than a bare checkbox-plus-text: it gives the label a real
+   target instead of asking for a tap on an 18px box. */
 .tag-filter label {
   flex-direction: row;
   align-items: center;
-  gap: 4px;
+  gap: 8px;
+  padding: 6px 0;
+  cursor: pointer;
 }
 
+.tag-filter label:hover {
+  color: var(--text-h);
+}
+
+/* One intrinsic track for every width instead of a breakpoint: the minimum
+   scales with the viewport between a phone-sized floor and the desktop card
+   width, which lands two-up on a phone, four-up on a tablet, and four-up at
+   full width. */
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(clamp(150px, 22vw, 240px), 1fr));
   gap: 16px;
 }
 
+/* The dashed footprint the skeletons use, borrowed for the states that have
+   nothing to show: an outline where the results would be, rather than a line
+   of text floating in the middle of an empty page. Left on the page background
+   rather than filled — a fill and a dashed border this close in value cancel
+   each other out, and the outline is the whole idea. */
 .state {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
-  padding: 48px 0;
+  gap: 16px;
+  padding: 44px 24px;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  text-align: center;
+}
+
+/* The message is the content of this state, not apparatus around it. */
+.state p {
+  color: var(--text-h);
 }
 
 .pager {
@@ -379,15 +667,25 @@ code {
   pointer-events: none;
 }
 
+/* A star is not a button-shaped thing, so it opts out of the control chrome
+   wholesale: no border, no radius, no 44px floor. The `min-height` reset is the
+   load-bearing one — left at the control default the three rating layers stop
+   being the same height and immediately stop lining up. */
 .star--button {
+  min-height: 0;
   padding: 0;
   border: 0;
+  border-radius: 0;
   background: none;
   font: inherit;
   cursor: pointer;
   /* Transparent rather than absent: an unrated star still has to occupy its
      box, or the three layers stop lining up. */
   color: transparent;
+}
+
+.star--button:hover:not(:disabled) {
+  background: none;
 }
 
 .star--button:disabled {
@@ -465,16 +763,19 @@ code {
   box-shadow: var(--shadow);
 }
 
+/* A menu row, not a button: it keeps the 44px target and the accent-wash hover
+   from the control layer, and drops the border, radius and centering that would
+   turn a list of matches into a stack of buttons. */
 .quantity__matches button {
-  display: block;
   width: 100%;
+  justify-content: start;
   text-align: left;
-  padding: 6px 10px;
+  padding: 6px 12px;
   border: 0;
+  border-radius: 0;
   background: none;
-  font: inherit;
+  font-weight: 400;
   color: inherit;
-  cursor: pointer;
 }
 
 .quantity__matches button:hover {

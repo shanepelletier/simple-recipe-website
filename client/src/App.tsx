@@ -15,12 +15,18 @@ function Header() {
   }
 
   return (
-    <header>
-      <nav>
+    <header className="site-header">
+      <nav className="site-nav">
         {/* <Link>/<NavLink>, never a bare <a href>: an anchor triggers a full
             page reload, which throws away the auth state and makes the app
-            look broken. NavLink adds isActive for the current-page highlight. */}
-        <NavLink to="/">Recipes</NavLink>
+            look broken. NavLink adds isActive for the current-page highlight.
+
+            `end` on the "/" link is load-bearing: every path starts with "/",
+            so without it the Recipes tab stays marked as the current page
+            while you are standing on the shopping list. */}
+        <NavLink to="/" end>
+          Recipes
+        </NavLink>
         {user !== null && (
           <>
             <NavLink to="/recipes/new">New recipe</NavLink>
@@ -28,7 +34,7 @@ function Header() {
           </>
         )}
       </nav>
-      <div>
+      <div className="site-user">
         {user === null ? (
           <>
             <Link to="/login">Sign in</Link>
@@ -36,7 +42,7 @@ function Header() {
           </>
         ) : (
           <>
-            <span>{user.username}</span>
+            <span className="site-user__name">{user.username}</span>
             <button type="button" onClick={handleSignOut}>
               Sign out
             </button>
