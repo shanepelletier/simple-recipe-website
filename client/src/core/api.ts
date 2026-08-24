@@ -148,6 +148,14 @@ export const addShoppingItem = (ingredient_id: number, unit_id: number, quantity
 export const addRecipeToShoppingList = (id: number) =>
   post<{ groups: ShoppingGroup[] }>(`/api/shopping-list/from-recipe/${id}/`, {});
 
+// Same endpoint, narrowed to one row by id — the server still attributes it
+// to the recipe (source_recipe), which a plain POST /api/shopping-list/ call
+// couldn't do since that endpoint has no notion of a recipe at all.
+export const addRecipeIngredientToShoppingList = (recipeId: number, recipeIngredientId: number) =>
+  post<{ groups: ShoppingGroup[] }>(`/api/shopping-list/from-recipe/${recipeId}/`, {
+    ingredient_id: recipeIngredientId,
+  });
+
 export const updateShoppingItem = (
   id: number,
   changes: { is_checked?: boolean; quantity?: string },

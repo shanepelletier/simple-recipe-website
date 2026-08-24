@@ -60,6 +60,9 @@ function Loaded({ recipe, onRated }: { recipe: Recipe; onRated: (r: RatingRespon
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState("");
   const [addedToList, setAddedToList] = useState(false);
+  // Per row rather than one flag, since adding one ingredient shouldn't
+  // disable the "add all" button or every other row's own button.
+  const [addedIngredientIds, setAddedIngredientIds] = useState<number[]>([]);
 
   async function run(action: () => Promise<void>) {
     if (busy) {
@@ -104,6 +107,13 @@ function Loaded({ recipe, onRated }: { recipe: Recipe; onRated: (r: RatingRespon
     void run(async () => {
       await api.addRecipeToShoppingList(recipe.id);
       setAddedToList(true);
+    });
+  }
+
+  function onAddIngredient(recipeIngredientId: number) {
+    void run(async () => {
+      await api.addRecipeIngredientToShoppingList(recipe.id, recipeIngredientId);
+      setAddedIngredientIds((ids) => [...ids, recipeIngredientId]);
     });
   }
 
@@ -156,7 +166,17 @@ function Loaded({ recipe, onRated }: { recipe: Recipe; onRated: (r: RatingRespon
           // The server's formatter is the single source of this string.
           // Rebuilding it here would be a second implementation of plurals
           // and the "of" rule, free to disagree with the shopping list.
-          <li key={item.id}>{item.display}</li>
+          <li key={item.id} className="detail__ingredient">
+            <span>{item.display}</span>
+            {user !== null &&
+              (addedIngredientIds.includes(item.id) ? (
+                <span> — added</span>
+              ) : (
+                <button type="button" onClick={() => onAddIngredient(item.id)} disabled={busy}>
+                  Add to shopping list
+                </button>
+              ))}
+          </li>
         ))}
       </ul>
 

@@ -109,6 +109,54 @@ def test_adding_the_same_recipe_twice_doubles_the_quantities(auth_client, author
 
 
 @pytest.mark.django_db
+def test_adding_one_ingredient_from_a_recipe_leaves_the_others_off(
+    auth_client, author, make_recipe
+):
+    recipe = make_recipe(
+        author, ingredients=(("2", "pound", "ground beef"), ("1", "whole", "onion"))
+    )
+    beef_row = recipe.ingredients.get(ingredient__name="ground beef")
+
+    groups = auth_client.post(
+        f"/api/shopping-list/from-recipe/{recipe.pk}/",
+        data=json.dumps({"ingredient_id": beef_row.pk}),
+        content_type="application/json",
+    ).json()["groups"]
+
+    assert [g["ingredient"] for g in groups] == ["ground beef"]
+
+
+@pytest.mark.django_db
+def test_adding_one_ingredient_records_the_source_recipe(auth_client, author, make_recipe):
+    recipe = make_recipe(author, ingredients=(("2", "pound", "ground beef"),))
+    beef_row = recipe.ingredients.get()
+
+    auth_client.post(
+        f"/api/shopping-list/from-recipe/{recipe.pk}/",
+        data=json.dumps({"ingredient_id": beef_row.pk}),
+        content_type="application/json",
+    )
+
+    assert ShoppingItem.objects.get().source_recipe_id == recipe.pk
+
+
+@pytest.mark.django_db
+def test_an_ingredient_id_from_a_different_recipe_is_rejected(auth_client, author, make_recipe):
+    chili = make_recipe(author, name="Chili", ingredients=(("2", "pound", "ground beef"),))
+    tacos = make_recipe(author, name="Tacos", ingredients=(("1", "whole", "onion"),))
+    onion_row = tacos.ingredients.get()
+
+    response = auth_client.post(
+        f"/api/shopping-list/from-recipe/{chili.pk}/",
+        data=json.dumps({"ingredient_id": onion_row.pk}),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 404
+    assert ShoppingItem.objects.count() == 0
+
+
+@pytest.mark.django_db
 def test_two_recipes_sharing_an_ingredient_and_unit_merge(auth_client, author, make_recipe):
     chili = make_recipe(author, name="Chili", ingredients=(("2", "pound", "ground beef"),))
     tacos = make_recipe(author, name="Tacos", ingredients=(("1", "pound", "ground beef"),))

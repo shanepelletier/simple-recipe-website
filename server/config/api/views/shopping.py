@@ -98,8 +98,24 @@ def shopping_add_from_recipe(request, pk):
         Recipe.objects.prefetch_related("ingredients__ingredient", "ingredients__unit"), pk=pk
     )
 
+    # An optional single row id narrows "add all" down to "add this one",
+    # while still going through add_to_list so the merge and the
+    # source_recipe attribution stay identical either way. Scoped to this
+    # recipe's own rows via .get() on the prefetched queryset, not a bare
+    # RecipeIngredient lookup, so a row id from someone else's recipe 404s
+    # instead of quietly attributing to the wrong recipe.
+    # "Add all" sends no body at all, so only parse one when it's actually
+    # JSON — running json_body over a POST with no content-type is what a
+    # bare `.post(url)` (no body) sends, and that isn't malformed JSON, it's
+    # simply not present.
+    is_json = request.content_type == "application/json"
+    ingredient_id = json_body(request).get("ingredient_id") if is_json else None
+    rows = recipe.ingredients.all()
+    if ingredient_id is not None:
+        rows = [get_object_or_404(rows, pk=ingredient_id)]
+
     with transaction.atomic():
-        for row in recipe.ingredients.all():
+        for row in rows:
             add_to_list(request.user, row.ingredient, row.unit, row.quantity, source_recipe=recipe)
 
     return shopping_list(request)

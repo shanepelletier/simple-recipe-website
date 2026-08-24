@@ -261,6 +261,13 @@ code {
   margin: 24px 0;
 }
 
+.detail__ingredient {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
 /* --- rating widget --- */
 
 .rating__stars {
