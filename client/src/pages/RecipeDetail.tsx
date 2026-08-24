@@ -128,7 +128,7 @@ function Loaded({ recipe, onRated }: { recipe: Recipe; onRated: (r: RatingRespon
   }
 
   return (
-    <article>
+    <article className="detail">
       <div className="detail__photo">
         {recipe.photo === null ? (
           <span className="card__placeholder" aria-hidden="true" />

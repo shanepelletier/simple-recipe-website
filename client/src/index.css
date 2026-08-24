@@ -715,16 +715,26 @@ main {
 
 /* --- detail page --- */
 
-/* 16:9 of the full 1126px column is 633px tall — on a 768px laptop viewport
-   that alone pushes the title past the fold, before the header and margins
-   even count. The cap keeps the reservation (no layout shift once the photo
-   decodes) while stopping the box from scaling past what a hero needs to be;
-   `object-fit: cover` on the image already tolerates the box being a
-   different ratio than 16:9 once the cap engages. Never hit on mobile, where
-   16:9 of a phone-width column is well under 480px on its own. */
+/* One measure for the whole article, centered in the window. A recipe is read
+   start to finish rather than scanned like the grid, so it takes a 720px
+   column instead of the grid's wider one — past that an ingredient list and a
+   paragraph of steps run wider than a comfortable line length. The photo takes
+   the same width as the prose: giving the hero its own wider measure left
+   every element below it hanging off one edge, and a page read top to bottom
+   is steadier with a single margin on each side than with two. */
+.detail {
+  max-width: 720px;
+  margin-inline: auto;
+}
+
+/* 16:9 of the 720px column is 405px tall, which is what a hero on this page
+   should be, so the ratio alone does the sizing — it reserves the box before
+   the photo decodes, so nothing below it shifts on load. No height cap: with
+   the column this width the ratio never produces a box tall enough to need
+   one, and an `aspect-ratio` fighting a `max-height` is what shrank this box
+   sideways into the left of the page in the first place. */
 .detail__photo {
   aspect-ratio: 16 / 9;
-  max-height: 480px;
   background: var(--code-bg);
   border-radius: 8px;
   overflow: hidden;
