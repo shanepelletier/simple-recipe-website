@@ -78,22 +78,12 @@
   }
 }
 
-/* The column is 1126px of *content*, so the gutter is padding rather than a
-   narrower max-width: at desktop the page is unchanged, and below 1174px the
-   text stops short of the viewport edge instead of running into it. */
+/* Full width, so the header's rule can run the whole window. The content
+   column is constrained on `main` instead. */
 #root {
-  width: calc(1126px + 2 * 24px);
-  max-width: 100%;
-  margin: 0 auto;
-  padding: 0 24px;
   min-height: 100svh;
   display: flex;
   flex-direction: column;
-  box-sizing: border-box;
-
-  @media (max-width: 1024px) {
-    padding: 0 16px;
-  }
 }
 
 body {
@@ -306,14 +296,21 @@ input[type="file"] {
 
 /* --- site header --- */
 
+/* Spans the window rather than the content column: the rule under it reads as
+   the edge of the app's chrome, and the nav sits in the window's corners where
+   a browser-level control belongs. The gutter is the header's own padding. */
 .site-header {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 8px 24px;
-  padding: 12px 0;
+  padding: 12px 24px;
   border-bottom: 1px solid var(--border);
+
+  @media (max-width: 1024px) {
+    padding: 12px 16px;
+  }
 }
 
 .site-nav,
@@ -352,10 +349,22 @@ input[type="file"] {
   color: var(--text-h);
 }
 
+/* The content column: 1126px of *content*, so the gutter is padding rather
+   than a narrower max-width — below 1174px the text stops short of the
+   viewport edge instead of running into it. */
 main {
   /* Takes the slack in the column, so a short page still puts the footerless
      bottom edge at the bottom of the viewport rather than mid-screen. */
   flex: 1;
+  width: calc(1126px + 2 * 24px);
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 0 24px;
+  box-sizing: border-box;
+
+  @media (max-width: 1024px) {
+    padding: 0 16px;
+  }
 }
 
 /* --- recipe card --- */
