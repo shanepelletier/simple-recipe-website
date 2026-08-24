@@ -49,7 +49,10 @@ function show(userRating: number | null, auth: AuthValue = signedIn, average: nu
   );
 }
 
-const star = (n: number) => screen.getByRole("button", { name: new RegExp(`${n} out of 5`) });
+const star = (n: number) =>
+  screen.getByRole("button", {
+    name: (name) => name.includes(`${n} out of 5`),
+  });
 const request = () => fetchMock.mock.calls[0] as [string, RequestInit];
 
 describe("RatingWidget", () => {

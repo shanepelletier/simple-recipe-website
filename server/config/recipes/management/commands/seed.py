@@ -222,7 +222,9 @@ class Command(BaseCommand):
         self.stdout.write("Loading reference data...")
         call_command("loaddata", "reference")
 
-        rng = random.Random(options["seed"])
+        # This is only used to provide pseudo-random data for the demo users, so it's fine to use
+        # here.
+        rng = random.Random(options["seed"])  # nosec
 
         if options["users"]:
             self.stdout.write(f"Creating {options['users']} users...")

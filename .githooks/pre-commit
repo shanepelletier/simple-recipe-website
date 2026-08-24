@@ -33,6 +33,7 @@ if staged_in server; then
   # Django settings, so they need the same env vars the app runs with.
   uv run --env-file ../.env mypy config
   uv run --env-file ../.env pytest
+  uv run bandit -c pyproject.toml -r .
 else
   echo "pre-commit: nothing staged under server/, skipping the Python checks"
 fi
