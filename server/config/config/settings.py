@@ -38,10 +38,17 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "django_erd_generator",
     "accounts",
     "recipes",
 ]
+
+# Dev-only tooling, not a dependency of the app itself: it's in the `dev`
+# uv group, so the image built for the app container (`uv sync --no-dev`)
+# never has it installed. Gating on DEBUG rather than always appending it
+# keeps that image bootable — the compose file forces DJANGO_DEBUG=false
+# for exactly that container.
+if DEBUG:
+    INSTALLED_APPS.append("django_erd_generator")
 
 AUTH_USER_MODEL = "accounts.User"
 
