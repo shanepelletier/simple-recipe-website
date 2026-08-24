@@ -103,6 +103,15 @@ wheels = [
 ]
 
 [[package]]
+name = "django-erd-generator"
+version = "0.1.7"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/89/39/c3f6810153c78c402a9453d394169448bf0f8e8127b4deb6e02401abbcb5/django_erd_generator-0.1.7.tar.gz", hash = "sha256:6344783ebeb92475e073c80daad1be146c62c57c35ff8bc83421e45e2e37a99a", size = 202497, upload-time = "2026-03-20T12:04:54.363Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/8f/51/9348efdf226271f261abac101c4c165eaa708fb1b00cbecbad69d8b916b9/django_erd_generator-0.1.7-py3-none-any.whl", hash = "sha256:a83d534fd9e0e1520cabbb333be1d72bfe159055f3adec1c4d92b586c353770f", size = 26350, upload-time = "2026-03-20T12:04:52.712Z" },
+]
+
+[[package]]
 name = "django-stubs"
 version = "6.1.0"
 source = { registry = "https://pypi.org/simple" }
@@ -506,6 +515,7 @@ dependencies = [
 
 [package.dev-dependencies]
 dev = [
+    { name = "django-erd-generator" },
     { name = "django-stubs" },
     { name = "mypy" },
     { name = "pytest" },
@@ -522,6 +532,7 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [
+    { name = "django-erd-generator", specifier = ">=0.1.7" },
     { name = "django-stubs", specifier = ">=6.1.0" },
     { name = "mypy", specifier = ">=2.3.1" },
     { name = "pytest", specifier = ">=9.1.1" },
