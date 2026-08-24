@@ -22,7 +22,18 @@ export default function RecipeGrid() {
   // The URL is the single source of truth, so a filtered view is shareable by
   // copying it and the back button undoes a filter change for free. Keeping
   // the same state in the component as well would be more code, not less.
-  const query = useMemo(() => Object.fromEntries(searchParams) as RecipeQuery, [searchParams]);
+  //
+  // `tag` is pulled out with `getAll` rather than folded into the
+  // `Object.fromEntries` below, since `fromEntries` keeps only the last value
+  // for a repeated key and a repeating `?tag=` is exactly what this filter
+  // needs to preserve.
+  const query = useMemo(
+    () => ({
+      ...(Object.fromEntries(searchParams) as RecipeQuery),
+      tag: searchParams.getAll("tag"),
+    }),
+    [searchParams],
+  );
 
   const { data, loading, error, reload } = useApi(
     () => api.recipes(query),
@@ -43,6 +54,24 @@ export default function RecipeGrid() {
       // Back to page one. Without this, changing a filter while on page 4 of
       // the old results shows an empty page 4 of the new ones, and the user
       // concludes the search is broken.
+      next.delete("page");
+      setSearchParams(next);
+    },
+    [searchParams, setSearchParams],
+  );
+
+  // Tags get their own setter rather than reusing setFilter: a checked tag
+  // adds to the existing set, an unchecked one removes just itself, and
+  // every other filter's set-or-delete-one-value shape doesn't cover that.
+  const toggleTag = useCallback(
+    (name: string, checked: boolean) => {
+      const next = new URLSearchParams(searchParams);
+      next.delete("tag");
+      const current = searchParams.getAll("tag");
+      const updated = checked ? [...current, name] : current.filter((tag) => tag !== name);
+      for (const tag of updated) {
+        next.append("tag", tag);
+      }
       next.delete("page");
       setSearchParams(next);
     },
@@ -96,20 +125,21 @@ export default function RecipeGrid() {
           />
         </label>
 
-        <label>
-          Tag
-          <select
-            value={query.tag ?? ""}
-            onChange={(event) => setFilter("tag", event.target.value)}
-          >
-            <option value="">Any</option>
-            {(tags.data?.results ?? []).map((tag) => (
-              <option key={tag.id} value={tag.name}>
-                {tag.name}
-              </option>
-            ))}
-          </select>
-        </label>
+        {/* Checked tags AND together — a recipe must carry all of them —
+            matching how the server's repeating `?tag=` filters. */}
+        <fieldset className="tag-filter">
+          <legend>Tags</legend>
+          {(tags.data?.results ?? []).map((tag) => (
+            <label key={tag.id}>
+              <input
+                type="checkbox"
+                checked={(query.tag ?? []).includes(tag.name)}
+                onChange={(event) => toggleTag(tag.name, event.target.checked)}
+              />
+              {tag.name}
+            </label>
+          ))}
+        </fieldset>
 
         {/* The label is what makes the bare numbers mean anything: this is a
             threshold, so 3 shows 3, 4 and 5. "Any" is not the same as 1 —

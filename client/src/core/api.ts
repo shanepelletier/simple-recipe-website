@@ -31,7 +31,11 @@ import type {
 
 export type RecipeQuery = {
   search?: string;
-  tag?: string;
+  // An array because the server ANDs a repeating `?tag=`: a recipe must
+  // carry every tag listed. queryString emits one `tag=` per entry rather
+  // than joining them, since joining would just move the parsing problem
+  // onto the server.
+  tag?: string[];
   author?: string;
   min_rating?: string;
   sort?: string;
@@ -53,10 +57,14 @@ export type RecipeBody = {
 };
 
 /** Drops empty values, so a cleared filter leaves the URL rather than becoming "". */
-function queryString(query: Record<string, string | number | undefined>): string {
+function queryString(query: Record<string, string | number | string[] | undefined>): string {
   const params = new URLSearchParams();
   for (const [key, value] of Object.entries(query)) {
-    if (value !== undefined && value !== "") {
+    if (Array.isArray(value)) {
+      for (const entry of value) {
+        params.append(key, entry);
+      }
+    } else if (value !== undefined && value !== "") {
       params.set(key, String(value));
     }
   }

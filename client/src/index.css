@@ -194,6 +194,27 @@ code {
   font-size: 14px;
 }
 
+.tag-filter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  border: none;
+  padding: 0;
+  font-size: 14px;
+}
+
+.tag-filter legend {
+  font-size: 14px;
+  padding: 0;
+}
+
+.tag-filter label {
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+}
+
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));

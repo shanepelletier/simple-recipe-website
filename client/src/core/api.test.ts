@@ -22,7 +22,7 @@ const calledMethod = () => (fetchMock.mock.calls[0][1] as RequestInit).method;
 
 describe("queryString", () => {
   it("drops empty and undefined values", async () => {
-    await recipes({ search: "", tag: "vegan", sort: undefined });
+    await recipes({ search: "", tag: ["vegan"], sort: undefined });
 
     expect(calledUrl()).toBe("/api/recipes/?tag=vegan");
   });
@@ -40,10 +40,16 @@ describe("queryString", () => {
   });
 
   it("keeps repeated calls independent", async () => {
-    await recipes({ tag: "vegan" });
+    await recipes({ tag: ["vegan"] });
     await recipes({});
 
     expect(String(fetchMock.mock.calls[1][0])).toBe("/api/recipes/");
+  });
+
+  it("emits one tag= per entry, in order, so the server ANDs them", async () => {
+    await recipes({ tag: ["vegan", "quick"] });
+
+    expect(calledUrl()).toBe("/api/recipes/?tag=vegan&tag=quick");
   });
 });
 
