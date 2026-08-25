@@ -2,3 +2,4 @@
 - End-to-end and integration tests.
 - An actual CI/CD setup.
 - Proper productionization.
+- Support some conversions between ingredient units. For example, water in grams and water in milliliters are easily and accurately convertible.
