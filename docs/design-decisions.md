@@ -2,6 +2,8 @@
 
 These are decisions that were made regarding how the application should look and behave to the end-user. These decisions were made either by myself (for minor decisions) or collaboratively.
 
+## UX
+
 - Recipe search is case insensitive.
 - Searching for multiple tags is supported using a token field, and means "find all recipes with tag X and with tag Y", so a user can find "vegan" and "quick" recipes easily. Adding an option to also search with OR might make sense in the future.
 - Quantities are only ever decimals, not fractions. This isn't the greatest UX and should be improved in the future so actual fractions exist and add together properly.
@@ -12,3 +14,8 @@ These are decisions that were made regarding how the application should look and
 - There is no maximum number of steps for a recipe, or for ingredients.
 - The maximum length of a comment is 250 words (defined as any group of 1 or more characters separated by whitespace) or 3000 characters (to prevent the case where an attacker leaves a comment that is 3 billion characters long but all one "word").
 - Ingredients from recipes can be added all at once to the shopping list, or one at a time.
+
+## UI
+
+- All pages except the recipe grid and login/register share the same shape: a column down the center of the page, with left-aligned content. Login/register mirror each other and consist of a single card in the center of the page. The recipe grid takes up the entire page (minus a small boundary).
+- Ratings are shown as stars and also written. Stars show both the user's rating and the average rating.
