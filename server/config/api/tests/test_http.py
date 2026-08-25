@@ -1,11 +1,20 @@
 import json
+from decimal import Decimal
 
 import pytest
 from django.core.exceptions import ValidationError
 from django.http import JsonResponse
 from django.test import RequestFactory
 
-from api.http import BadRequest, error, json_body, json_errors, login_required_json
+from api.http import (
+    BadRequest,
+    error,
+    json_body,
+    json_errors,
+    login_required_json,
+    parse_id,
+    parse_quantity,
+)
 
 
 class AnonymousUserStub:
@@ -38,6 +47,44 @@ def test_json_body_raises_bad_request_on_malformed_json():
 
     with pytest.raises(BadRequest):
         json_body(request)
+
+
+@pytest.mark.parametrize("payload", ["[1, 2, 3]", '"a string"', "42", "null", "true"])
+def test_json_body_rejects_valid_json_that_is_not_an_object(payload):
+    # Every caller does body.get(...) next. Each of these parses fine as JSON
+    # but would raise AttributeError downstream instead of a clean 400.
+    request = RequestFactory().post("/", data=payload, content_type="application/json")
+
+    with pytest.raises(BadRequest):
+        json_body(request)
+
+
+@pytest.mark.parametrize(
+    ("raw", "expected"),
+    [(5, 5), (0, 0), (-3, -3), ("5", None), (5.0, None), (True, None), (False, None), (None, None)],
+)
+def test_parse_id(raw, expected):
+    assert parse_id(raw) == expected
+
+
+@pytest.mark.parametrize(
+    ("raw", "expected"),
+    [
+        ("2", Decimal("2")),
+        ("0.667", Decimal("0.667")),
+        ("0", None),
+        ("-1", None),
+        ("nope", None),
+        (None, None),
+        ("NaN", None),  # comparing a NaN Decimal raises InvalidOperation, not just "invalid"
+        ("Infinity", None),
+        ("1e30", None),  # would overflow the DB column's max_digits=10
+        ("9999999.999", Decimal("9999999.999")),  # exactly 10 digits: the largest valid value
+        ("10000000", None),  # one digit over
+    ],
+)
+def test_parse_quantity(raw, expected):
+    assert parse_quantity(raw) == expected
 
 
 def test_error_has_the_standard_shape():

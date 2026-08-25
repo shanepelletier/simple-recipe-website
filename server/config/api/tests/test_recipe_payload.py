@@ -89,6 +89,52 @@ def test_a_non_numeric_quantity_is_rejected(reference):
 
 
 @pytest.mark.django_db
+@pytest.mark.parametrize("quantity", ["NaN", "Infinity", "1e30"])
+def test_an_unusable_quantity_is_rejected_rather_than_crashing(reference, quantity):
+    # NaN/Infinity raise InvalidOperation on comparison rather than parsing,
+    # and 1e30 would overflow the DB column — both used to reach the ORM and
+    # 500 instead of coming back as a normal validation error.
+    bad = payload(reference)
+    bad["ingredients"][0]["quantity"] = quantity
+
+    with pytest.raises(RecipeInvalid) as caught:
+        parse_recipe_payload(bad)
+
+    assert "ingredients" in caught.value.fields
+
+
+@pytest.mark.django_db
+def test_a_non_integer_ingredient_id_is_rejected_rather_than_crashing(reference):
+    bad = payload(reference)
+    bad["ingredients"][0] = {
+        "ingredient_id": "not-an-id",
+        "unit_id": reference.units["pound"].id,
+        "quantity": "1",
+    }
+
+    with pytest.raises(RecipeInvalid) as caught:
+        parse_recipe_payload(bad)
+
+    assert "ingredients" in caught.value.fields
+
+
+@pytest.mark.django_db
+def test_tags_that_are_not_a_list_are_rejected(reference):
+    with pytest.raises(RecipeInvalid) as caught:
+        parse_recipe_payload(payload(reference, tags="vegan"))
+
+    assert "tags" in caught.value.fields
+
+
+@pytest.mark.django_db
+def test_a_non_integer_tag_id_is_rejected_rather_than_crashing(reference):
+    with pytest.raises(RecipeInvalid) as caught:
+        parse_recipe_payload(payload(reference, tags=["not-an-id"]))
+
+    assert "tags" in caught.value.fields
+
+
+@pytest.mark.django_db
 def test_every_bad_ingredient_row_is_reported_at_once(reference):
     bad = payload(reference)
     bad["ingredients"] = [

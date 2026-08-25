@@ -11,7 +11,7 @@ from django.views.decorators.http import require_http_methods
 from recipes.models import Recipe, RecipeIngredient, Step
 from recipes.permissions import can_edit_recipe
 
-from api.http import error, json_body, json_errors, login_required_json
+from api.http import error, json_body, json_errors, login_required_json, parse_id
 from api.recipe_payload import parse_recipe_payload
 from api.serializers import recipe_card_to_dict, recipe_to_dict
 
@@ -132,14 +132,15 @@ def recipe_update(request, pk):
         return error("You can only edit your own recipes.", status=403)
 
     body = json_body(request)
-    if "version" not in body:
+    version = parse_id(body.get("version")) if "version" in body else None
+    if version is None:
         return error("Missing version.", fields={"version": ["Reload the page and try again."]})
 
     parsed = parse_recipe_payload(body)
 
     with transaction.atomic():
         # The database checks the version and writes in ONE statement.
-        updated = Recipe.objects.filter(pk=pk, version=body["version"]).update(
+        updated = Recipe.objects.filter(pk=pk, version=version).update(
             name=parsed.name,
             version=F("version") + 1,
             # auto_now does NOT fire on a queryset .update(), so set it here

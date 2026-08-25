@@ -73,3 +73,11 @@ def test_a_rejected_create_writes_nothing(auth_client, reference):
     post(auth_client, body)
 
     assert Recipe.objects.count() == 0
+
+
+@pytest.mark.django_db
+def test_a_json_body_that_is_not_an_object_is_rejected_rather_than_crashing(auth_client):
+    # A JSON list parses fine but every view does body.get(...) next.
+    response = auth_client.post("/api/recipes/", data="[1, 2, 3]", content_type="application/json")
+
+    assert response.status_code == 400

@@ -92,6 +92,18 @@ def test_a_stranger_cannot_edit_someone_elses_recipe(
 
 
 @pytest.mark.django_db
+def test_a_non_numeric_version_is_rejected_rather_than_crashing(
+    auth_client, author, make_recipe, reference
+):
+    recipe = make_recipe(author)
+
+    response = patch(auth_client, recipe.pk, edit_body(reference, version="not-a-version"))
+
+    assert response.status_code == 400
+    assert "version" in response.json()["fields"]
+
+
+@pytest.mark.django_db
 def test_a_moderator_can_edit_anyones_recipe(client, author, moderator, make_recipe, reference):
     recipe = make_recipe(author)
     client.force_login(moderator)

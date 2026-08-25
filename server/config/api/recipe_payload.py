@@ -1,10 +1,9 @@
 from dataclasses import dataclass
-from decimal import Decimal, InvalidOperation
 
 from django.conf import settings
 from recipes.models import Ingredient, Tag, Unit
 
-from api.http import BadRequest
+from api.http import BadRequest, parse_id, parse_quantity
 
 
 @dataclass
@@ -55,8 +54,13 @@ def _parse_tags(raw, fields):
         fields["tags"] = [f"A recipe can have at most {settings.MAX_TAGS_PER_RECIPE} tags."]
         return []
 
-    tags = list(Tag.objects.filter(id__in=raw))
-    if len(tags) != len(set(raw)):
+    ids = [parse_id(item) for item in raw]
+    if any(tag_id is None for tag_id in ids):
+        fields["tags"] = ["One of those tags no longer exists."]
+        return []
+
+    tags = list(Tag.objects.filter(id__in=ids))
+    if len(tags) != len(set(ids)):
         fields["tags"] = ["One of those tags no longer exists."]
     return tags
 
@@ -76,13 +80,9 @@ def _parse_ingredients(raw, fields):
 
     for index, row in enumerate(raw):
         label = f"Ingredient {index + 1}"
-        try:
-            quantity = Decimal(str(row.get("quantity", "")).strip())
-        except (InvalidOperation, AttributeError):
-            messages.append(f"{label}: quantity must be a number.")
-            continue
-        if quantity <= 0:
-            messages.append(f"{label}: quantity must be greater than zero.")
+        quantity = parse_quantity(row.get("quantity"))
+        if quantity is None:
+            messages.append(f"{label}: enter a quantity greater than zero.")
             continue
 
         unit = units.get(row.get("unit_id"))
@@ -105,7 +105,10 @@ def _parse_ingredients(raw, fields):
 def _resolve_ingredient(row):
     """Accept an existing id, or create one from a typed-in name."""
     if row.get("ingredient_id"):
-        return Ingredient.objects.filter(pk=row["ingredient_id"]).first()
+        ingredient_id = parse_id(row["ingredient_id"])
+        if ingredient_id is None:
+            return None
+        return Ingredient.objects.filter(pk=ingredient_id).first()
 
     name = (row.get("ingredient_name") or "").strip()
     if not name:

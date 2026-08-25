@@ -26,6 +26,35 @@ def test_same_ingredient_same_unit_merges_into_one_row(auth_client, reference):
 
 
 @pytest.mark.django_db
+@pytest.mark.parametrize("quantity", ["NaN", "Infinity", "1e30", "0", "nope"])
+def test_an_unusable_quantity_is_rejected_rather_than_crashing(auth_client, reference, quantity):
+    beef, pound = reference.ingredients["ground beef"], reference.units["pound"]
+
+    response = add(auth_client, beef, pound, quantity)
+
+    assert response.status_code == 400
+    assert ShoppingItem.objects.count() == 0
+
+
+@pytest.mark.django_db
+def test_a_non_integer_ingredient_id_is_rejected_rather_than_crashing(auth_client, reference):
+    response = auth_client.post(
+        "/api/shopping-list/",
+        data=json.dumps(
+            {
+                "ingredient_id": "not-an-id",
+                "unit_id": reference.units["pound"].id,
+                "quantity": "1",
+            }
+        ),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 400
+    assert ShoppingItem.objects.count() == 0
+
+
+@pytest.mark.django_db
 def test_same_ingredient_different_unit_stays_two_rows(auth_client, reference):
     beef = reference.ingredients["ground beef"]
 
@@ -154,6 +183,21 @@ def test_an_ingredient_id_from_a_different_recipe_is_rejected(auth_client, autho
 
     assert response.status_code == 404
     assert ShoppingItem.objects.count() == 0
+
+
+@pytest.mark.django_db
+def test_a_non_integer_ingredient_id_from_a_recipe_404s_rather_than_crashing(
+    auth_client, author, make_recipe
+):
+    recipe = make_recipe(author, ingredients=(("2", "pound", "ground beef"),))
+
+    response = auth_client.post(
+        f"/api/shopping-list/from-recipe/{recipe.pk}/",
+        data=json.dumps({"ingredient_id": "not-an-id"}),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 404
 
 
 @pytest.mark.django_db

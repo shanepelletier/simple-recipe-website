@@ -1,4 +1,3 @@
-from decimal import Decimal, InvalidOperation
 from itertools import groupby
 
 from django.db import transaction
@@ -8,7 +7,7 @@ from django.shortcuts import get_object_or_404
 from django.views.decorators.http import require_http_methods
 from recipes.models import Ingredient, Recipe, ShoppingItem, Unit
 
-from api.http import error, json_body, json_errors, login_required_json
+from api.http import error, json_body, json_errors, login_required_json, parse_id, parse_quantity
 from api.serializers import shopping_item_to_dict
 
 
@@ -49,26 +48,20 @@ def add_to_list(user, ingredient, unit, quantity, source_recipe=None):
     return item
 
 
-def _parse_quantity(raw):
-    try:
-        quantity = Decimal(str(raw).strip())
-    except (InvalidOperation, AttributeError, TypeError):
-        return None
-    return quantity if quantity > 0 else None
-
-
 @login_required_json
 def shopping_add(request):
     body = json_body(request)
 
-    quantity = _parse_quantity(body.get("quantity"))
+    quantity = parse_quantity(body.get("quantity"))
     if quantity is None:
         return error(
             "Enter a quantity.", fields={"quantity": ["Enter a number greater than zero."]}
         )
 
-    ingredient = Ingredient.objects.filter(pk=body.get("ingredient_id")).first()
-    unit = Unit.objects.filter(pk=body.get("unit_id")).first()
+    ingredient_id = parse_id(body.get("ingredient_id"))
+    unit_id = parse_id(body.get("unit_id"))
+    ingredient = Ingredient.objects.filter(pk=ingredient_id).first() if ingredient_id else None
+    unit = Unit.objects.filter(pk=unit_id).first() if unit_id else None
     if ingredient is None or unit is None:
         return error(
             "Choose an ingredient and a measurement.",
@@ -109,10 +102,13 @@ def shopping_add_from_recipe(request, pk):
     # bare `.post(url)` (no body) sends, and that isn't malformed JSON, it's
     # simply not present.
     is_json = request.content_type == "application/json"
-    ingredient_id = json_body(request).get("ingredient_id") if is_json else None
+    raw_ingredient_id = json_body(request).get("ingredient_id") if is_json else None
     rows = recipe.ingredients.all()
-    if ingredient_id is not None:
-        rows = [get_object_or_404(rows, pk=ingredient_id)]
+    if raw_ingredient_id is not None:
+        # An id that isn't even int-shaped can't belong to this recipe's
+        # rows either, so it 404s the same way a well-formed but foreign id
+        # does, rather than crashing when the ORM tries to prepare it.
+        rows = [get_object_or_404(rows, pk=parse_id(raw_ingredient_id))]
 
     with transaction.atomic():
         for row in rows:
@@ -132,7 +128,7 @@ def shopping_update(request, pk):
         item.is_checked = bool(body["is_checked"])
 
     if "quantity" in body:
-        quantity = _parse_quantity(body["quantity"])
+        quantity = parse_quantity(body["quantity"])
         if quantity is None:
             return error(
                 "Enter a quantity.", fields={"quantity": ["Enter a number greater than zero."]}
