@@ -11,7 +11,7 @@ export default function Register() {
       pendingLabel="Creating account…"
       passwordAutoComplete="new-password"
       action={signUp}
-      alternate={{ to: "/login", label: "Already have one?" }}
+      alternate={{ to: "/login", label: "Already have an account?" }}
     />
   );
 }

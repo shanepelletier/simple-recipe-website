@@ -403,7 +403,7 @@ input[type="file"] {
   gap: 4px 20px;
 }
 
-/* Also the sign-in footer's "Need an account?" / "Already have one?" — a
+/* Also the sign-in footer's "Need an account?" / "Already have an account?" — a
    navigation action that happens to be text, reusing the header's link rather
    than re-declaring it a second time under its own name. */
 .site-nav a,

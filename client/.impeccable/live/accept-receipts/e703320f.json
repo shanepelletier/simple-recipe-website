@@ -1,0 +1,12 @@
+{
+  "id": "e703320f",
+  "operation": "accept",
+  "variantId": "3",
+  "result": {
+    "handled": true,
+    "file": "src/pages/RecipeGrid.tsx",
+    "carbonize": true,
+    "todo": "REQUIRED before next poll: carbonize cleanup in src/pages/RecipeGrid.tsx. See reference/live.md \"Required after accept\"."
+  },
+  "completedAt": "2026-08-24T15:46:47.785Z"
+}

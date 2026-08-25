@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "appRoot": "/home/shane/simple-recipe-website/client",
+  "repoRoot": "/home/shane/simple-recipe-website",
+  "contextRoot": "/home/shane/simple-recipe-website",
+  "sessionRoot": "/home/shane/simple-recipe-website/client/.impeccable/live",
+  "productPath": "/home/shane/simple-recipe-website/PRODUCT.md",
+  "designPath": "/home/shane/simple-recipe-website/DESIGN.md",
+  "resolvedFrom": "target:client/src/pages/RecipeGrid.tsx"
+}

@@ -1,0 +1,71 @@
+{
+  "id": "e703320f",
+  "phase": "completed",
+  "pageUrl": "/",
+  "sourceFile": "src/pages/RecipeGrid.tsx",
+  "previewFile": null,
+  "previewMode": null,
+  "expectedVariants": 3,
+  "arrivedVariants": 3,
+  "visibleVariant": 3,
+  "paramValues": {
+    "density": "snug"
+  },
+  "pendingEventSeq": null,
+  "pendingEvent": null,
+  "deliveryLease": null,
+  "checkpointRevision": 10,
+  "browserCheckpointRevision": 10,
+  "publicationCheckpointRevision": 0,
+  "activeOwner": "83139ee0",
+  "sourceMarkers": {},
+  "fallbackMode": null,
+  "generationPhase": "generation_ready",
+  "generationCompletedAt": 1787586407798,
+  "generationTimings": {
+    "picked_up": {
+      "at": 1787586084033,
+      "durationMs": null
+    },
+    "scaffolding": {
+      "at": 1787586084033,
+      "durationMs": null
+    },
+    "source_ready": {
+      "at": 1787586084146,
+      "durationMs": 111.56064399999741
+    },
+    "generation_ready": {
+      "at": 1787586084146,
+      "durationMs": null
+    }
+  },
+  "variantPlan": null,
+  "generationCanceled": true,
+  "generationCanceledAt": 1787586407724,
+  "cancelReason": "accept",
+  "annotationArtifacts": [],
+  "mountedVariants": [],
+  "mountFailures": [],
+  "renderState": "pending",
+  "diagnostics": [
+    {
+      "error": "carbonize_cleanup_required",
+      "file": "src/pages/RecipeGrid.tsx",
+      "message": "Accepted variant still has carbonize markers that must be folded into source CSS."
+    },
+    {
+      "error": "checkpoint_after_terminal_ignored",
+      "phase": "generating",
+      "revision": 2
+    },
+    {
+      "error": "checkpoint_after_terminal_ignored",
+      "phase": "generating",
+      "revision": 3
+    }
+  ],
+  "updatedAt": "2026-08-24T15:48:40.915Z",
+  "__journalBytes": 18221,
+  "__nextSeq": 24
+}
