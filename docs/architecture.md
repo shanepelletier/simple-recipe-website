@@ -353,6 +353,15 @@ Created by admins only, via the Django admin.
 |  | source_recipe_id | `bigint` | [Recipe](#Recipe) |  | ✓ |  |  |  | ✓ |
 |  | created_at | `timestamp with time zone` |  |  |  |  |  |  |  |
 
+## Concurrency considerations
+
+There are four separate locations where concurrency is particularly difficult to get right, and each locations has its own solution:
+
+1. Two users editing the same recipe; one user saves their changes, and then the second user tries to save their changes. This is solving via optimistic locking: recipes are versioned, and on recipe save the system checks to see if the version the client sends matches the version stored. If they don't match, the edit is rejected and the user is informed that someone else edited the recipe first. If they do, then the version stored is incremented by one.
+2. A user submits two reviews for the same recipe. The DB has a unique constraint enforcing that each user can only have at most one review per recipe.
+3. Two users rate a recipe at the same time. `select_for_update()` is used to ensure that only one rating is entered into the DB at a time, forcing the concurrent requests to happen one at a time.
+4. Multiple ingredients are added to the shopping list with the same units at the same time. The quantities of these ingredients are designed to merge in the DB, and so `F()` is used to ensure that the addition happens in the DB and all quantity additions are accounted for, instead of one overwriting the others.
+
 # Frontend
 
 The frontend is a React application which communicates with the Django API via standard HTTP. As with the backend, it uses the minimum amount of dependencies necessary.
