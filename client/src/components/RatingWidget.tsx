@@ -9,6 +9,27 @@ import { returnTo, withNext } from "../core/next";
 
 const STARS = [1, 2, 3, 4, 5];
 
+// Drawn rather than the ★/☆ characters: a font glyph carries side bearing —
+// blank space inside its own box before the ink starts — and the average
+// layer clips a star mid-width to draw a fraction like 3.25. Clipped inside
+// that bearing, a quarter star showed as a single stray pixel instead of a
+// recognizable quarter. This path fills its 24x24 box edge to edge, so the
+// same width clip reveals a proportional slice instead.
+const STAR_PATH =
+  "M12 1 L14.47 8.6 L22.46 8.6 L16 13.3 L18.47 20.9 L12 16.2 L5.53 20.9 L8 13.3 L1.54 8.6 L9.53 8.6 Z";
+
+function StarIcon({ outline = false }: { outline?: boolean }) {
+  return (
+    <svg className="star-icon" viewBox="0 0 24 24" aria-hidden="true">
+      {outline ? (
+        <path d={STAR_PATH} fill="none" stroke="currentColor" strokeWidth="1.6" />
+      ) : (
+        <path d={STAR_PATH} fill="currentColor" />
+      )}
+    </svg>
+  );
+}
+
 interface Props {
   recipeId: number;
   average: number | null;
@@ -38,6 +59,14 @@ export function RatingWidget({ recipeId, average, count, userRating, isOwner, on
   // Preview follows the pointer on the user's own layer only. The average
   // layer underneath is context, not something the pointer is editing.
   const shown = hover ?? userRating;
+
+  // The stars round the average to the nearest half; the text below states
+  // the exact figure. A star's outer points are thin, so clipping one at an
+  // arbitrary width — a quarter, a third — reveals only a sliver of the tip
+  // rather than anything read as "a quarter of a star." Halves are the
+  // finest fraction whose clip still lands past the point into the star's
+  // body, where there's enough width for the fill to look proportional.
+  const displayAverage = average === null ? 0 : Math.round(average * 2) / 2;
 
   async function onClick(star: number) {
     if (busy) {
@@ -73,19 +102,19 @@ export function RatingWidget({ recipeId, average, count, userRating, isOwner, on
         <span className="rating__track" aria-hidden="true">
           {STARS.map((star) => (
             <span key={star} className="star">
-              ☆
+              <StarIcon outline />
             </span>
           ))}
         </span>
 
         <span
           className="rating__average"
-          style={{ width: `${((average ?? 0) / STARS.length) * 100}%` }}
+          style={{ width: `${(displayAverage / STARS.length) * 100}%` }}
           aria-hidden="true"
         >
           {STARS.map((star) => (
             <span key={star} className="star">
-              ★
+              <StarIcon />
             </span>
           ))}
         </span>
@@ -103,7 +132,7 @@ export function RatingWidget({ recipeId, average, count, userRating, isOwner, on
                       // translucent blend; past that, plain alpha over bare paper reads
                       // as a washed-out grey barely different from an unrated star, so
                       // the rest of the user's own stars go opaque instead.
-                      star <= (average ?? 0)
+                      star <= displayAverage
                       ? " star--user-blend"
                       : " star--user"
                 }`}
@@ -119,7 +148,7 @@ export function RatingWidget({ recipeId, average, count, userRating, isOwner, on
                 }
                 aria-pressed={userRating !== null && star <= userRating}
               >
-                ★
+                <StarIcon />
               </button>
             ))}
           </span>

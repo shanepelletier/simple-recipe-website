@@ -984,8 +984,19 @@ main {
 .star {
   display: inline-flex;
   justify-content: center;
+  align-items: center;
   flex: none;
   width: 1.15em;
+}
+
+/* Drawn, not the ★/☆ characters: see the comment by STAR_PATH in
+   RatingWidget.tsx for why. The shape fills this box edge to edge, which is
+   what makes the average layer's mid-star clip (a 3.25 average, say) reveal
+   a proportional slice instead of the sliver a font glyph's bearing left. */
+.star-icon {
+  display: block;
+  width: 1em;
+  height: 1em;
 }
 
 .rating__track {
