@@ -288,6 +288,12 @@ function Results({
 
   return (
     <>
+      {/* The one number a filtered view needs and couldn't previously show:
+          how much a search or a tag actually narrowed the grid down to. */}
+      <p className="results-count" role="status">
+        {data.total} {data.total === 1 ? "recipe" : "recipes"}
+      </p>
+
       <div className="grid">
         {data.results.map((recipe) => (
           // Keyed by id, never by array index — see what index keys do to a

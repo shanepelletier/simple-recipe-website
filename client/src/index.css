@@ -650,6 +650,15 @@ main {
   max-width: 340px;
 }
 
+/* Apparatus, not content — how many recipes a filter narrowed down to, not one
+   of them — so it takes Ink Muted rather than the headline weight the grid's
+   cards use. */
+.results-count {
+  margin: 0 0 16px;
+  color: var(--text);
+  font-size: 14px;
+}
+
 /* --- tag filter --- */
 
 /* A token field rather than a row of checkboxes. The checkbox row was honest
