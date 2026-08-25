@@ -333,3 +333,28 @@ describe("RecipeForm photos", () => {
     expect(screen.getByRole("button", { name: "Keep the current photo" })).toBeDefined();
   });
 });
+
+describe("RecipeForm validation", () => {
+  it("points an invalid field at the message that explains why, not just that it is invalid", async () => {
+    show("/recipes/new");
+    // Everything but the name, so this is the one problem submitting reports.
+    fireEvent.change(await screen.findByLabelText("Quantity"), { target: { value: "2" } });
+    fireEvent.change(screen.getByLabelText("Unit"), { target: { value: "1" } });
+    fireEvent.change(screen.getByLabelText("Ingredient"), { target: { value: "beef" } });
+    fireEvent.change(screen.getByLabelText("Step 1"), { target: { value: "Brown the beef" } });
+
+    save();
+
+    const nameInput = screen.getByLabelText("Name");
+    expect(nameInput.getAttribute("aria-invalid")).toBe("true");
+    // aria-invalid alone says something is wrong; a screen reader visiting
+    // this field later, not just at the moment the alert fires, needs
+    // aria-describedby to say what — and it has to name a real id, not a
+    // guess at one the error list might use.
+    const describedBy = nameInput.getAttribute("aria-describedby");
+    expect(describedBy).not.toBeNull();
+    expect(document.getElementById(describedBy as string)?.textContent).toBe(
+      "Give the recipe a name.",
+    );
+  });
+});

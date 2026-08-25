@@ -154,6 +154,10 @@ function Editor({
   const target = saved ?? recipe;
   const storedPhoto = target?.photo ?? null;
   const savedWithoutPhoto = saved !== null && photoError !== "";
+  // Whether the field's own error list is the one about to render — the
+  // notice panel takes over saying this when savedWithoutPhoto is true, so
+  // aria-describedby has to agree with that or point at an id nobody drew.
+  const photoShowsError = !savedWithoutPhoto && photoError !== "";
 
   // The tag field speaks in names because that is what it shows; the request
   // carries ids. Both directions go through the one vocabulary the form
@@ -313,10 +317,13 @@ function Editor({
           <input
             value={name}
             aria-invalid={errors.name === undefined ? undefined : true}
+            // Points at the list below only when it will actually render one —
+            // a stale reference to an id nobody drew would be its own bug.
+            aria-describedby={errors.name === undefined ? undefined : "name-errors"}
             onChange={(event) => setName(event.target.value)}
           />
         </label>
-        <FieldErrors messages={errors.name} />
+        <FieldErrors id="name-errors" messages={errors.name} />
       </div>
 
       <section className="recipe-form__section">
@@ -341,6 +348,8 @@ function Editor({
               ref={fileInput}
               type="file"
               accept={PHOTO_ACCEPT}
+              aria-invalid={photoError === "" ? undefined : true}
+              aria-describedby={photoShowsError ? "photo-errors" : undefined}
               onChange={(event) => choose(event.target.files?.[0] ?? null)}
             />
           </label>
@@ -354,9 +363,7 @@ function Editor({
           )}
         </div>
         {/* Only when the panel above isn't already carrying the same sentence. */}
-        {!savedWithoutPhoto && (
-          <FieldErrors messages={photoError === "" ? undefined : [photoError]} />
-        )}
+        {photoShowsError && <FieldErrors id="photo-errors" messages={[photoError]} />}
       </section>
 
       <section className="recipe-form__section">
@@ -469,12 +476,12 @@ function Editor({
   );
 }
 
-function FieldErrors({ messages }: { messages?: string[] }) {
+function FieldErrors({ id, messages }: { id?: string; messages?: string[] }) {
   if (messages === undefined || messages.length === 0) {
     return null;
   }
   return (
-    <ul className="field-errors" role="alert">
+    <ul id={id} className="field-errors" role="alert">
       {messages.map((message) => (
         <li key={message}>{message}</li>
       ))}

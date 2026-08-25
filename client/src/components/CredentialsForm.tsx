@@ -101,9 +101,11 @@ export function CredentialsForm({
             // could sensibly be in on arrival.
             autoFocus
             required
+            aria-invalid={fieldErrors.username === undefined ? undefined : true}
+            aria-describedby={fieldErrors.username === undefined ? undefined : "username-errors"}
           />
         </label>
-        <FieldErrors messages={fieldErrors.username} />
+        <FieldErrors id="username-errors" messages={fieldErrors.username} />
       </div>
 
       <div className="auth__field">
@@ -116,9 +118,11 @@ export function CredentialsForm({
             onChange={(event) => setPassword(event.target.value)}
             autoComplete={passwordAutoComplete}
             required
+            aria-invalid={fieldErrors.password === undefined ? undefined : true}
+            aria-describedby={fieldErrors.password === undefined ? undefined : "password-errors"}
           />
         </label>
-        <FieldErrors messages={fieldErrors.password} />
+        <FieldErrors id="password-errors" messages={fieldErrors.password} />
       </div>
 
       <button type="submit" className="auth__submit" disabled={submitting}>
@@ -138,12 +142,12 @@ export function CredentialsForm({
   );
 }
 
-function FieldErrors({ messages }: { messages?: string[] }) {
+function FieldErrors({ id, messages }: { id?: string; messages?: string[] }) {
   if (messages === undefined || messages.length === 0) {
     return null;
   }
   return (
-    <ul className="field-errors" role="alert">
+    <ul id={id} className="field-errors" role="alert">
       {messages.map((message) => (
         <li key={message}>{message}</li>
       ))}
