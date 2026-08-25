@@ -143,7 +143,10 @@ export function QuantityInput({ value, onChange, unitGroups, allowCreate = true 
         )}
       </label>
 
-      {preview !== "" && <p className="quantity__preview">{preview}</p>}
+      {/* Rendered whether or not there is a sentence yet: the line holds its
+          own height, so a row does not change shape on the keystroke that
+          completes it. */}
+      <p className="quantity__preview">{preview}</p>
     </div>
   );
 }

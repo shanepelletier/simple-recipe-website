@@ -156,8 +156,8 @@ async function fillForm() {
   fireEvent.change(screen.getByLabelText("Unit"), { target: { value: "1" } });
   fireEvent.change(screen.getByLabelText("Ingredient"), { target: { value: "beef" } });
   // By its label like every other box here. The numeral beside a step box is
-  // drawn by a CSS counter, which assistive tech never sees, so the box names
-  // itself — and reaching it this way is what keeps that true.
+  // not a label for it, so the box names itself — and reaching it this way is
+  // what keeps that true.
   fireEvent.change(screen.getByLabelText("Step 1"), { target: { value: "Brown the beef" } });
 }
 
@@ -168,6 +168,31 @@ beforeEach(() => {
 });
 
 afterEach(() => vi.unstubAllGlobals());
+
+describe("RecipeForm rows", () => {
+  it("names the row each control acts on, rather than counting rows", async () => {
+    show("/recipes/9/edit", filled);
+
+    // What a control says out loud is the only thing distinguishing it from
+    // the identical marks around it, so it says which row it belongs to.
+    expect(await screen.findByRole("button", { name: "Reorder beef" })).toBeDefined();
+    expect(screen.getByRole("button", { name: "Remove onion" })).toBeDefined();
+    // A step has no content of its own to name, so it falls back to its number.
+    expect(screen.getByRole("button", { name: "Reorder step 1" })).toBeDefined();
+  });
+
+  it("offers no way to empty the list", async () => {
+    show("/recipes/9/edit", filled);
+
+    await screen.findByLabelText("Name");
+    fireEvent.click(screen.getByRole("button", { name: "Remove onion" }));
+
+    // A recipe with no ingredients at all is not a state the form offers.
+    expect(
+      (screen.getByRole("button", { name: "Remove beef" }) as HTMLButtonElement).disabled,
+    ).toBe(true);
+  });
+});
 
 describe("RecipeForm tags", () => {
   const tagged: Recipe = { ...filled, tags: [tags[0]] };

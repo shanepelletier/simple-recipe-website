@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import type { SubmitEvent } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 
 import { QuantityInput } from "../components/QuantityInput";
+import { SortableRows } from "../components/SortableRows";
 import { TagField } from "../components/TagField";
 import * as api from "../core/api";
 import { asApiError } from "../core/client";
@@ -239,6 +240,26 @@ function Editor({
     }
   }
 
+  // Stable across renders because SortableRows subscribes the window to a live
+  // drag with these in the dependency list; fresh closures every render would
+  // tear that subscription down and rebuild it on every pointer move.
+  const describeIngredient = useCallback(
+    // The ingredient itself once there is one, so a control says "Remove olive
+    // oil" rather than counting rows at somebody who cannot see them.
+    (row: IngredientRow, index: number) =>
+      row.ingredientName.trim() === "" ? `ingredient ${index + 1}` : row.ingredientName.trim(),
+    [],
+  );
+  const describeStep = useCallback((_row: StepRow, index: number) => `step ${index + 1}`, []);
+  const moveIngredient = useCallback(
+    (from: number, to: number) => setIngredients((rows) => moveRow(rows, from, to)),
+    [],
+  );
+  const moveStep = useCallback(
+    (from: number, to: number) => setSteps((rows) => moveRow(rows, from, to)),
+    [],
+  );
+
   // Named, not navigate(-1). A recipe opened straight from a bookmark or a
   // hand-typed /edit URL has whatever came before it in history — another
   // site, or nothing — and Cancel should never be the control that leaves.
@@ -342,13 +363,14 @@ function Editor({
         {/* A list, one message per bad row, so a five-ingredient recipe says
             which line the server objected to. */}
         <FieldErrors messages={errors.ingredients} />
-        <ol className="rows">
-          {ingredients.map((row, index) => (
-            // Keyed by row.key, never by index. Keyed by index, React reuses the
-            // node at position 2 for whatever row is now at position 2, so
-            // deleting the first of three leaves the inputs showing the old
-            // row's text and a move-up swaps the values straight back.
-            <li key={row.key}>
+        <SortableRows
+          className="rows"
+          items={ingredients}
+          describe={describeIngredient}
+          onMove={moveIngredient}
+        >
+          {(row, index) => (
+            <>
               <QuantityInput
                 value={row}
                 unitGroups={unitGroups}
@@ -356,15 +378,14 @@ function Editor({
                   setIngredients((rows) => updateRow(rows, row.key, value))
                 }
               />
-              <RowControls
-                index={index}
-                count={ingredients.length}
-                onMove={(to) => setIngredients((rows) => moveRow(rows, index, to))}
-                onRemove={() => setIngredients((rows) => removeRow(rows, row.key))}
+              <RowButton
+                label={`Remove ${describeIngredient(row, index)}`}
+                disabled={ingredients.length === 1}
+                onClick={() => setIngredients((rows) => removeRow(rows, row.key))}
               />
-            </li>
-          ))}
-        </ol>
+            </>
+          )}
+        </SortableRows>
         <button
           type="button"
           onClick={() => setIngredients((rows) => [...rows, blankIngredient()])}
@@ -376,29 +397,39 @@ function Editor({
       <section className="recipe-form__section">
         <h2>Steps</h2>
         <FieldErrors messages={errors.steps} />
-        <ol className="rows rows--steps">
-          {steps.map((row, index) => (
-            <li key={row.key}>
+        <SortableRows
+          className="rows rows--steps"
+          items={steps}
+          describe={describeStep}
+          onMove={moveStep}
+        >
+          {(row, index) => (
+            <>
+              {/* A rendered numeral rather than the CSS counter the detail page
+                  uses for the same mark: here it has to sit after the drag
+                  handle, and source order is what decides that. Same figure,
+                  same muted ink — only the technique differs. */}
+              <span className="rows__number">{index + 1}.</span>
               <textarea
                 value={row.text}
-                rows={2}
-                // The one box in this form with no visible label. The numeral
-                // beside it is drawn by a CSS counter, which assistive tech
-                // never sees, so the box carries the name itself.
+                // The one box in this form with no visible label of its own —
+                // the numeral beside it is not one, so the box carries the
+                // name itself.
                 aria-label={`Step ${index + 1}`}
-                onChange={(event) =>
-                  setSteps((rows) => updateRow(rows, row.key, { text: event.target.value }))
-                }
+                ref={fitToText}
+                onChange={(event) => {
+                  fitToText(event.target);
+                  setSteps((rows) => updateRow(rows, row.key, { text: event.target.value }));
+                }}
               />
-              <RowControls
-                index={index}
-                count={steps.length}
-                onMove={(to) => setSteps((rows) => moveRow(rows, index, to))}
-                onRemove={() => setSteps((rows) => removeRow(rows, row.key))}
+              <RowButton
+                label={`Remove ${describeStep(row, index)}`}
+                disabled={steps.length === 1}
+                onClick={() => setSteps((rows) => removeRow(rows, row.key))}
               />
-            </li>
-          ))}
-        </ol>
+            </>
+          )}
+        </SortableRows>
         <button type="button" onClick={() => setSteps((rows) => [...rows, blankStep()])}>
           Add step
         </button>
@@ -450,28 +481,61 @@ function FieldErrors({ messages }: { messages?: string[] }) {
   );
 }
 
-function RowControls({
-  index,
-  count,
-  onMove,
-  onRemove,
+/**
+ * Sets a step box's height from what is written in it.
+ *
+ * A step is a sentence or a paragraph, and neither of those knows in advance
+ * how many lines it wants. Left at a fixed two rows the box scrolls its own
+ * content internally, which is the one place in this form where what you typed
+ * goes out of sight while you are still typing it.
+ *
+ * The reset is load-bearing: scrollHeight never reports less than the height
+ * already standing on the element, so without it the box could only ever grow.
+ */
+function fitToText(box: HTMLTextAreaElement | null) {
+  if (box === null) {
+    return;
+  }
+  box.style.height = "auto";
+  box.style.height = `${box.scrollHeight}px`;
+}
+
+/**
+ * The one thing left to do to a row that reordering does not cover.
+ *
+ * Drawn at the same stroke weight as the select's chevron and the tag token's
+ * close mark; a typed × would inherit the text font and go stale against every
+ * other mark in the app. The target stays 44px square even though the mark is
+ * small — this form gets used one-handed in a kitchen — and the button keeps
+ * the whole sentence as its accessible name while the tooltip stays short,
+ * since "Remove olive oil" on every row is the wall of words this replaced.
+ */
+function RowButton({
+  label,
+  disabled,
+  onClick,
 }: {
-  index: number;
-  count: number;
-  onMove: (to: number) => void;
-  onRemove: () => void;
+  label: string;
+  disabled: boolean;
+  onClick: () => void;
 }) {
   return (
-    <span className="rows__controls">
-      <button type="button" onClick={() => onMove(index - 1)} disabled={index === 0}>
-        Move up
-      </button>
-      <button type="button" onClick={() => onMove(index + 1)} disabled={index === count - 1}>
-        Move down
-      </button>
-      <button type="button" onClick={onRemove} disabled={count === 1}>
-        Remove
-      </button>
-    </span>
+    <button
+      type="button"
+      className="rows__button"
+      aria-label={label}
+      title="Remove"
+      disabled={disabled}
+      onClick={onClick}
+    >
+      <svg width="16" height="16" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+        <path
+          d="M3.5 3.5l7 7M10.5 3.5l-7 7"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+        />
+      </svg>
+    </button>
   );
 }

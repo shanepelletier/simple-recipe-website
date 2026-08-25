@@ -1047,8 +1047,15 @@ main {
   background: var(--accent-bg);
 }
 
+/* The line is always here, whether or not there is a sentence to put on it.
+   Rendered only when complete, it appeared on the keystroke that finished the
+   row and pushed everything below it down — a row was two lines high or three
+   depending on how far through filling it in you were, and the controls beside
+   it moved as you typed. Reserved space over reflow, the same call the photo
+   boxes and the skeletons make. */
 .quantity__preview {
   flex-basis: 100%;
+  min-height: 1lh;
   font-size: 15px;
   color: var(--text-h);
 }
@@ -1064,20 +1071,108 @@ main {
   gap: 16px;
 }
 
+/* A grip, the row, and the one action reordering doesn't cover. The handle
+   supplies the row's left inset itself — it is a 44px target with its mark in
+   the middle, which lands the grip at the same 12px off the bracket that the
+   detail page insets its text by. */
 .rows > li {
   border-left: 2px solid var(--border);
-  padding-left: 12px;
+  display: grid;
+  /* Three columns that cannot wrap: the grip, the row itself, and the one
+     action reordering doesn't cover. Laid out as a wrapping flex row instead,
+     a phone dropped the remove mark onto a line of its own with 300px of
+     nothing beside it, while the grip drifted into the middle of the fields. */
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  column-gap: 12px;
 }
 
-.rows__controls {
-  display: inline-flex;
-  gap: 8px;
-  margin-top: 8px;
+/* The numeral takes a column of its own. A step box grows with its paragraph,
+   so centering would drift the grip and the mark down the page as somebody
+   typed; held at the top they stay level with the step's first line. */
+.rows--steps > li {
+  grid-template-columns: auto auto 1fr auto;
+  align-items: start;
 }
 
+/* The same figure .detail__steps draws with a counter, in the same muted ink —
+   see RecipeForm for why this one is an element instead. The offset is the
+   textarea's own top padding, which puts the numeral on the step's first line
+   rather than against the top of the box holding it. */
+.rows__number {
+  padding-top: 10px;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+/* A box that sizes itself shouldn't also carry a grip that fights it. */
+.rows--steps textarea {
+  resize: none;
+  overflow: hidden;
+}
+
+/* Quiet at rest and the ordinary button on hover. The border is transparent
+   rather than absent so gaining the hover mark doesn't move the marks beside
+   it — the same trick the header's nav links use for their underline. */
+.rows__handle,
+.rows__button {
+  width: 44px;
+  padding: 0;
+  color: var(--text);
+  background: none;
+  border-color: transparent;
+}
+
+.rows__handle:hover:not(:disabled),
+.rows__button:hover:not(:disabled) {
+  color: var(--text-h);
+}
+
+/* Without this the shared disabled-hover rule puts a visible border back on a
+   button that is explicitly not offering anything. */
+.rows__button:disabled:hover {
+  border-color: transparent;
+}
+
+.rows__handle {
+  cursor: grab;
+  /* Or the browser takes the gesture as a scroll and the row never moves —
+     there is no reordering by touch at all without this. */
+  touch-action: none;
+}
+
+.rows__handle[aria-pressed="true"] {
+  cursor: grabbing;
+}
+
+/* A row in the air, marked the way this system marks the one thing currently
+   true everywhere else: the bracket it already has takes the accent, and the
+   wash comes up behind it.
+
+   Qualified by the list rather than left as a bare class: `.rows > li` sets
+   the border a class on its own cannot outrank, and the accent silently lost
+   every time.
+
+   The wash is painted over the page colour rather than straight onto
+   transparency. A dragged row travels across its neighbours, and a 15% wash
+   with nothing behind it lets them read through the row on top of them. Two
+   background layers is the whole trick; a second solid token would have to be
+   defined in both schemes to say the same thing.
+
+   Raised in the paint order for the same reason, and only while it moves. */
+.rows > li.rows__row--lifted {
+  position: relative;
+  z-index: 1;
+  border-left-color: var(--accent);
+  background: linear-gradient(var(--accent-bg), var(--accent-bg)) var(--bg);
+}
+
+/* Both fill the row's middle column, and both may shrink below their content's
+   natural size: without this a grid item refuses to go under min-content, and
+   the ingredient box pushes the remove mark off the end of the row. */
+.rows .quantity,
 .rows textarea {
-  width: 100%;
-  box-sizing: border-box;
+  min-width: 0;
 }
 
 /* --- recipe form --- */
