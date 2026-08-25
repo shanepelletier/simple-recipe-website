@@ -66,8 +66,10 @@ export function RatingWidget({ recipeId, average, count, userRating, isOwner, on
             a shape when nothing is set. The average sits above it, clipped to
             a fraction of the width so 4.5 really draws four and a half stars
             rather than rounding and contradicting the number below. The user's
-            own stars sit on top in a translucent colour, so where both are
-            present the two mix into a third tone. */}
+            own stars sit on top: opaque green where the average doesn't reach,
+            so an above-average rating still reads clearly against the paper,
+            and a partial-alpha blend only over the stars the average fills,
+            so a star carrying both reads as a third tone instead of hiding one. */}
         <span className="rating__track" aria-hidden="true">
           {STARS.map((star) => (
             <span key={star} className="star">
@@ -94,7 +96,17 @@ export function RatingWidget({ recipeId, average, count, userRating, isOwner, on
               <button
                 key={star}
                 type="button"
-                className={`star star--button${shown !== null && star <= shown ? " star--user" : ""}`}
+                className={`star star--button${
+                  shown === null || star > shown
+                    ? ""
+                    : // Only a star the average actually reaches underneath needs the
+                      // translucent blend; past that, plain alpha over bare paper reads
+                      // as a washed-out grey barely different from an unrated star, so
+                      // the rest of the user's own stars go opaque instead.
+                      star <= (average ?? 0)
+                      ? " star--user-blend"
+                      : " star--user"
+                }`}
                 disabled={busy}
                 onMouseEnter={() => setHover(star)}
                 onFocus={() => setHover(star)}
