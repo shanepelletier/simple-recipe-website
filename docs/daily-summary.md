@@ -25,3 +25,7 @@ Finished frontend and began work on polishing documentation. Still need to polis
 # August 24th, 2026
 
 Worked on polishing documentation and frontend. Work is almost complete on the frontend, with just a few small issues to fix and an overall pass at consistency between pages required.
+
+# August 25th, 2026
+
+Finished polishing documentation and frontend, and made a final pass over everything.

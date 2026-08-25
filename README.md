@@ -2,7 +2,7 @@
 
 A simple recipe website built using Django, PostgreSQL, and React. 
 
-## Features
+# Features
 
 - Account registration and login.
 - Admin pages for managing everything, accessible by administrators.
@@ -99,3 +99,11 @@ To run the backend tests:
 To run the frontend tests:
 
 - From the `client/` directory, run `npm run test`.
+
+## Bulk seeding
+
+In addition to `--demo`, the `seed` management command also supports passing in `--recipes` and `--users` to seed multiple recipes and users for stress-testing purposes.
+
+# Docs
+
+Documentation for various engineering decisions, as well as a development log, [are here](/docs/).
