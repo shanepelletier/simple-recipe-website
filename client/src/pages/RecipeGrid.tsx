@@ -2,6 +2,7 @@ import { useCallback, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router";
 
 import { RecipeCard } from "../components/RecipeCard";
+import { TagField } from "../components/TagField";
 import * as api from "../core/api";
 import type { RecipeQuery } from "../core/api";
 import { hasActiveFilters } from "../core/filters";
@@ -109,47 +110,8 @@ export default function RecipeGrid() {
     setSearchParams(next);
   }
 
-  // Local, and deliberately not in the URL: this narrows the list of tags you
-  // could pick, which is not part of what the grid is showing. Putting it in
-  // the query string would make it survive a share and a reload, and neither
-  // is something anyone wants from a picker's search box.
-  const [tagQuery, setTagQuery] = useState("");
-
   const selectedTags = query.tag ?? [];
   const allTags = tags.data?.results ?? [];
-
-  // Case-insensitive substring, matching how recipe search already behaves —
-  // a picker that were stricter than the search beside it would be a surprise.
-  const tagMatches = allTags.filter(
-    (tag) =>
-      !selectedTags.includes(tag.name) &&
-      tag.name.toLowerCase().includes(tagQuery.trim().toLowerCase()),
-  );
-
-  function addTag(name: string) {
-    toggleTag(name, true);
-    // Cleared so the menu goes back to showing everything: after adding
-    // "vegan", leaving "veg" in the box hides "vegetarian" for no stated
-    // reason, and the list looks broken rather than filtered.
-    setTagQuery("");
-  }
-
-  function onTagKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
-    // Enter takes the first match, so a tag can be added without leaving the
-    // keyboard or aiming at anything.
-    if (event.key === "Enter" && tagMatches.length > 0) {
-      event.preventDefault();
-      addTag(tagMatches[0].name);
-      return;
-    }
-    // Backspace on an empty box removes the last token — the behavior every
-    // token field has, and the only way to undo a selection without reaching
-    // for the mouse.
-    if (event.key === "Backspace" && tagQuery === "" && selectedTags.length > 0) {
-      event.preventDefault();
-      toggleTag(selectedTags[selectedTags.length - 1], false);
-    }
-  }
 
   const filtered = hasActiveFilters(searchParams);
 
@@ -210,69 +172,17 @@ export default function RecipeGrid() {
         )}
 
         {/* Selected tags AND together — a recipe must carry all of them —
-            matching how the server's repeating `?tag=` filters. A token field
-            rather than a row of checkboxes: the tag list is admin-editable and
-            unbounded, so a control whose width grew with it got worse every
-            time the product got richer. */}
-        {/* A label and one input, not a fieldset and a legend: the tokens are
-            contents of a single field rather than a group of controls, and a
-            <legend> inside a flex fieldset is pulled out of the flex flow by
-            the browser, so it never lined up with the labels beside it. */}
-        <div className="tagfield">
-          <label className="tagfield__label" htmlFor="tag-filter">
-            Tags
-          </label>
-          <div className="tagfield__box">
-            {selectedTags.map((name) => (
-              <button
-                key={name}
-                type="button"
-                className="tagfield__token"
-                aria-label={`Remove ${name}`}
-                onClick={() => toggleTag(name, false)}
-              >
-                {name}
-                <svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true">
-                  <path
-                    d="M1 1l8 8M9 1l-8 8"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                  />
-                </svg>
-              </button>
-            ))}
-            <input
-              id="tag-filter"
-              className="tagfield__input"
-              type="text"
-              value={tagQuery}
-              placeholder={selectedTags.length === 0 ? "Add a tag…" : ""}
-              onChange={(event) => setTagQuery(event.target.value)}
-              onKeyDown={onTagKeyDown}
-            />
-          </div>
-          <ul className="tagfield__menu">
-            {tagMatches.map((tag) => (
-              <li key={tag.id}>
-                <button type="button" className="tagfield__option" onClick={() => addTag(tag.name)}>
-                  {tag.name}
-                </button>
-              </li>
-            ))}
-            {/* Three different dead ends, and naming which one it is saves the
-                user working out whether they mistyped or ran out of tags. */}
-            {tagMatches.length === 0 && (
-              <li className="tagfield__empty">
-                {allTags.length === 0
-                  ? "No tags exist yet."
-                  : selectedTags.length === allTags.length
-                    ? "Every tag is already applied."
-                    : `No tags match “${tagQuery.trim()}”.`}
-              </li>
-            )}
-          </ul>
-        </div>
+            matching how the server's repeating `?tag=` filters. No ceiling
+            here, unlike the recipe form: narrowing by six tags is a legitimate
+            search even though tagging a recipe with six is not. */}
+        <TagField
+          id="tag-filter"
+          label="Tags"
+          options={allTags}
+          selected={selectedTags}
+          onAdd={(tag) => toggleTag(tag.name, true)}
+          onRemove={(name) => toggleTag(name, false)}
+        />
       </div>
 
       <Results
