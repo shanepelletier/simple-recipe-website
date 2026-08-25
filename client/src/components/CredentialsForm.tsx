@@ -1,7 +1,8 @@
 import { useState } from "react";
 import type { SubmitEvent } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router";
+import { Link, Navigate, useNavigate, useSearchParams } from "react-router";
 
+import { useAuth } from "../core/auth-context";
 import { asApiError } from "../core/client";
 import { nextDestination, safeNext } from "../core/next";
 
@@ -30,6 +31,7 @@ export function CredentialsForm({
   passwordAutoComplete,
   alternate,
 }: Props) {
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
@@ -44,6 +46,16 @@ export function CredentialsForm({
   const [submitting, setSubmitting] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
   const [formError, setFormError] = useState("");
+
+  // Already signed in — Back, a stale bookmark, a shared link. RequireAuth
+  // only ever bounces the other direction (anonymous out of a guarded page),
+  // so nothing else catches this: without it, alice sees a sign-in form she
+  // cannot use for anything, with her own name still sitting in the header.
+  // Sent to the same place a fresh sign-in would have gone, not to the grid
+  // unconditionally, so a guard's detour still resolves correctly.
+  if (user !== null) {
+    return <Navigate to={next} replace />;
+  }
 
   async function onSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault(); // or the browser navigates and the form is lost
