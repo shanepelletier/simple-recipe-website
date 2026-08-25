@@ -71,7 +71,7 @@ export function QuantityInput({ value, onChange, unitGroups, allowCreate = true 
 
   return (
     <div className="quantity">
-      <label>
+      <label className="quantity__amount">
         Quantity
         {/* Held as a string all the way to the request, so no decimal drifts
             through a float round-trip. */}
@@ -84,7 +84,7 @@ export function QuantityInput({ value, onChange, unitGroups, allowCreate = true 
         />
       </label>
 
-      <label>
+      <label className="quantity__unit">
         Unit
         <select
           value={value.unitId ?? ""}

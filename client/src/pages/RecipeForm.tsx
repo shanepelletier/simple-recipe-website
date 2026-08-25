@@ -3,6 +3,7 @@ import type { SubmitEvent } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 
 import { QuantityInput } from "../components/QuantityInput";
+import { TagField } from "../components/TagField";
 import * as api from "../core/api";
 import { asApiError } from "../core/client";
 import type { Recipe, Tag, UnitGroup } from "../core/models";
@@ -41,15 +42,54 @@ export default function RecipeForm() {
   // still remembers the stale one.
   const [reloads, setReloads] = useState(0);
 
-  if (existing.loading || units.loading || tags.loading) {
-    return <p>Loading…</p>;
-  }
+  // All three or none. A form whose unit list never arrived can be typed into
+  // and never completed — every ingredient needs a unit — so a failed units
+  // call is as fatal here as a missing recipe, and saying so beats a select
+  // that silently offers nothing.
+  const loading = existing.loading || units.loading || tags.loading;
+  const failure = existing.error ?? units.error ?? tags.error;
 
-  if (existing.error !== null) {
+  // The same column the form takes, so the page doesn't change width as it
+  // resolves — and the same heading, kept outside the states the way the
+  // shopping list keeps its own: a recipe that is still arriving, or that
+  // failed to arrive, is still the page that was asked for. The name is the
+  // one part that has to wait, which is why the editor sets its own heading
+  // once it has one.
+  if (loading || failure !== null) {
     return (
-      <h1>
-        {existing.error.status === 404 ? "That recipe doesn't exist." : "Couldn't load the recipe."}
-      </h1>
+      <div className="recipe-form">
+        <h1>{recipeId === null ? "New recipe" : "Edit recipe"}</h1>
+        {failure === null ? (
+          <div className="state" aria-busy="true">
+            <p>Loading…</p>
+          </div>
+        ) : (
+          <div className="state">
+            <p>
+              {failure.status === 404 ? "That recipe doesn't exist." : "Couldn't load the recipe."}
+            </p>
+            {/* Nothing to retry when the recipe isn't there, so the only useful
+                control is the way out. Anything else is a button that will fail
+                again for the same reason. */}
+            {failure.status === 404 ? (
+              <Link className="btn-link" to="/">
+                Back to recipes
+              </Link>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  existing.reload();
+                  units.reload();
+                  tags.reload();
+                }}
+              >
+                Retry
+              </button>
+            )}
+          </div>
+        )}
+      </div>
     );
   }
 
@@ -113,11 +153,12 @@ function Editor({
   const storedPhoto = target?.photo ?? null;
   const savedWithoutPhoto = saved !== null && photoError !== "";
 
-  function toggleTag(tagId: number) {
-    setSelectedTags((current) =>
-      current.includes(tagId) ? current.filter((id) => id !== tagId) : [...current, tagId],
-    );
-  }
+  // The tag field speaks in names because that is what it shows; the request
+  // carries ids. Both directions go through the one vocabulary the form
+  // loaded, so neither side has to invent the half it doesn't hold.
+  const tagNames = selectedTags
+    .map((id) => allTags.find((tag) => tag.id === id)?.name)
+    .filter((tagName) => tagName !== undefined);
 
   async function onSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -198,10 +239,15 @@ function Editor({
     }
   }
 
-  const tagsFull = selectedTags.length >= MAX_TAGS;
+  // Named, not navigate(-1). A recipe opened straight from a bookmark or a
+  // hand-typed /edit URL has whatever came before it in history — another
+  // site, or nothing — and Cancel should never be the control that leaves.
+  function cancel() {
+    navigate(target === null ? "/" : `/recipes/${target.id}`);
+  }
 
   return (
-    <form onSubmit={onSubmit}>
+    <form className="recipe-form" onSubmit={onSubmit}>
       {/* From the same expression the save branches on, so the heading cannot
           claim this is still a new recipe once one has been created. */}
       <h1>{target === null ? "New recipe" : `Edit ${target.name}`}</h1>
@@ -239,139 +285,151 @@ function Editor({
 
       {formError !== "" && <p role="alert">{formError}</p>}
 
-      <label>
-        Name
-        <input value={name} onChange={(event) => setName(event.target.value)} />
-      </label>
-      <FieldErrors messages={errors.name} />
-
-      <h2>Photo</h2>
-      {/* One photo on screen at a time: a new choice replaces the stored one
-          in the preview, because that is what saving is about to do. */}
-      {photo !== null ? (
-        <img
-          className="form__photo"
-          src={photo.url}
-          alt="Selected photo"
-          onError={rejectUndecodable}
-        />
-      ) : (
-        storedPhoto !== null && (
-          <img className="form__photo" src={storedPhoto} alt="Current photo" />
-        )
-      )}
-      <div className="detail__actions">
+      <div className="recipe-form__field">
         <label>
-          {storedPhoto === null ? "Add a photo" : "Replace photo"}
+          Name
           <input
-            ref={fileInput}
-            type="file"
-            accept={PHOTO_ACCEPT}
-            onChange={(event) => choose(event.target.files?.[0] ?? null)}
+            value={name}
+            aria-invalid={errors.name === undefined ? undefined : true}
+            onChange={(event) => setName(event.target.value)}
           />
         </label>
-        {photo !== null && (
-          <button type="button" onClick={clear}>
-            {/* Not "Remove" once a photo is stored: no endpoint deletes one, so
-                that label would promise something the app cannot do. All this
-                can undo is the choice. */}
-            {storedPhoto === null ? "Remove" : "Keep the current photo"}
-          </button>
-        )}
+        <FieldErrors messages={errors.name} />
       </div>
-      {/* Only when the panel above isn't already carrying the same sentence. */}
-      {!savedWithoutPhoto && (
-        <FieldErrors messages={photoError === "" ? undefined : [photoError]} />
-      )}
 
-      <h2>Ingredients</h2>
-      {/* A list, one message per bad row, so a five-ingredient recipe says
-          which line the server objected to. */}
-      <FieldErrors messages={errors.ingredients} />
-      <ol className="rows">
-        {ingredients.map((row, index) => (
-          // Keyed by row.key, never by index. Keyed by index, React reuses the
-          // node at position 2 for whatever row is now at position 2, so
-          // deleting the first of three leaves the inputs showing the old
-          // row's text and a move-up swaps the values straight back.
-          <li key={row.key}>
-            <QuantityInput
-              value={row}
-              unitGroups={unitGroups}
-              onChange={(value: QuantityValue) =>
-                setIngredients((rows) => updateRow(rows, row.key, value))
-              }
+      <section className="recipe-form__section">
+        <h2>Photo</h2>
+        {/* Drawn at the ratio the recipe page will show it at, and filled
+            before there is anything in it, so choosing a photo replaces a box
+            that is already there rather than pushing the rest of the form
+            down as the image decodes. One photo on screen at a time: a new
+            choice replaces the stored one, because that is what saving is
+            about to do. */}
+        <div className="recipe-form__photo">
+          {photo !== null ? (
+            <img src={photo.url} alt="Selected photo" onError={rejectUndecodable} />
+          ) : (
+            storedPhoto !== null && <img src={storedPhoto} alt="Current photo" />
+          )}
+        </div>
+        <div className="recipe-form__photo-actions">
+          <label>
+            {storedPhoto === null ? "Add a photo" : "Replace photo"}
+            <input
+              ref={fileInput}
+              type="file"
+              accept={PHOTO_ACCEPT}
+              onChange={(event) => choose(event.target.files?.[0] ?? null)}
             />
-            <RowControls
-              index={index}
-              count={ingredients.length}
-              onMove={(to) => setIngredients((rows) => moveRow(rows, index, to))}
-              onRemove={() => setIngredients((rows) => removeRow(rows, row.key))}
-            />
-          </li>
-        ))}
-      </ol>
-      <button type="button" onClick={() => setIngredients((rows) => [...rows, blankIngredient()])}>
-        Add ingredient
-      </button>
+          </label>
+          {photo !== null && (
+            <button type="button" onClick={clear}>
+              {/* Not "Remove" once a photo is stored: no endpoint deletes one, so
+                  that label would promise something the app cannot do. All this
+                  can undo is the choice. */}
+              {storedPhoto === null ? "Remove" : "Keep the current photo"}
+            </button>
+          )}
+        </div>
+        {/* Only when the panel above isn't already carrying the same sentence. */}
+        {!savedWithoutPhoto && (
+          <FieldErrors messages={photoError === "" ? undefined : [photoError]} />
+        )}
+      </section>
 
-      <h2>Steps</h2>
-      <FieldErrors messages={errors.steps} />
-      <ol className="rows">
-        {steps.map((row, index) => (
-          <li key={row.key}>
-            <textarea
-              value={row.text}
-              rows={2}
-              onChange={(event) =>
-                setSteps((rows) => updateRow(rows, row.key, { text: event.target.value }))
-              }
-            />
-            <RowControls
-              index={index}
-              count={steps.length}
-              onMove={(to) => setSteps((rows) => moveRow(rows, index, to))}
-              onRemove={() => setSteps((rows) => removeRow(rows, row.key))}
-            />
-          </li>
-        ))}
-      </ol>
-      <button type="button" onClick={() => setSteps((rows) => [...rows, blankStep()])}>
-        Add step
-      </button>
-
-      <h2>Tags</h2>
-      <FieldErrors messages={errors.tags} />
-      <p>
-        {selectedTags.length} of {MAX_TAGS} tags selected
-      </p>
-      <ul className="tag-picker">
-        {allTags.map((tag) => {
-          const checked = selectedTags.includes(tag.id);
-          return (
-            <li key={tag.id}>
-              <label>
-                <input
-                  type="checkbox"
-                  checked={checked}
-                  // Disabling the unselected ones once five are chosen beats
-                  // letting the server reject a sixth. The server is still the
-                  // authority; this just means nobody meets it by accident.
-                  disabled={!checked && tagsFull}
-                  onChange={() => toggleTag(tag.id)}
-                />
-                {tag.name}
-              </label>
+      <section className="recipe-form__section">
+        <h2>Ingredients</h2>
+        {/* A list, one message per bad row, so a five-ingredient recipe says
+            which line the server objected to. */}
+        <FieldErrors messages={errors.ingredients} />
+        <ol className="rows">
+          {ingredients.map((row, index) => (
+            // Keyed by row.key, never by index. Keyed by index, React reuses the
+            // node at position 2 for whatever row is now at position 2, so
+            // deleting the first of three leaves the inputs showing the old
+            // row's text and a move-up swaps the values straight back.
+            <li key={row.key}>
+              <QuantityInput
+                value={row}
+                unitGroups={unitGroups}
+                onChange={(value: QuantityValue) =>
+                  setIngredients((rows) => updateRow(rows, row.key, value))
+                }
+              />
+              <RowControls
+                index={index}
+                count={ingredients.length}
+                onMove={(to) => setIngredients((rows) => moveRow(rows, index, to))}
+                onRemove={() => setIngredients((rows) => removeRow(rows, row.key))}
+              />
             </li>
-          );
-        })}
-      </ul>
+          ))}
+        </ol>
+        <button
+          type="button"
+          onClick={() => setIngredients((rows) => [...rows, blankIngredient()])}
+        >
+          Add ingredient
+        </button>
+      </section>
 
-      <div className="detail__actions">
+      <section className="recipe-form__section">
+        <h2>Steps</h2>
+        <FieldErrors messages={errors.steps} />
+        <ol className="rows rows--steps">
+          {steps.map((row, index) => (
+            <li key={row.key}>
+              <textarea
+                value={row.text}
+                rows={2}
+                // The one box in this form with no visible label. The numeral
+                // beside it is drawn by a CSS counter, which assistive tech
+                // never sees, so the box carries the name itself.
+                aria-label={`Step ${index + 1}`}
+                onChange={(event) =>
+                  setSteps((rows) => updateRow(rows, row.key, { text: event.target.value }))
+                }
+              />
+              <RowControls
+                index={index}
+                count={steps.length}
+                onMove={(to) => setSteps((rows) => moveRow(rows, index, to))}
+                onRemove={() => setSteps((rows) => removeRow(rows, row.key))}
+              />
+            </li>
+          ))}
+        </ol>
+        <button type="button" onClick={() => setSteps((rows) => [...rows, blankStep()])}>
+          Add step
+        </button>
+      </section>
+
+      <section className="recipe-form__section">
+        <h2 id="tags-heading">Tags</h2>
+        <FieldErrors messages={errors.tags} />
+        {/* The same field the grid filters with, capped at five. The control
+            it replaced laid every tag out at once as a checkbox, which is a
+            row that gets worse every time an admin adds a tag. */}
+        <TagField
+          id="recipe-tags"
+          labelledBy="tags-heading"
+          options={allTags}
+          selected={tagNames}
+          max={MAX_TAGS}
+          onAdd={(tag) => setSelectedTags((current) => [...current, tag.id])}
+          onRemove={(tagName) =>
+            setSelectedTags((current) =>
+              current.filter((id) => allTags.find((tag) => tag.id === id)?.name !== tagName),
+            )
+          }
+        />
+      </section>
+
+      <div className="recipe-form__actions">
         <button type="submit" disabled={saving}>
           {saving ? "Saving…" : "Save recipe"}
         </button>
-        <button type="button" onClick={() => navigate(-1)}>
+        <button type="button" onClick={cancel}>
           Cancel
         </button>
       </div>

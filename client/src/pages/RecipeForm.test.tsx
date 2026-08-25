@@ -2,7 +2,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { Recipe, UnitGroup } from "../core/models";
+import type { Recipe, RecipeIngredient, Tag, UnitGroup } from "../core/models";
 import RecipeForm from "./RecipeForm";
 
 const unitGroups: UnitGroup[] = [
@@ -21,6 +21,21 @@ const unitGroups: UnitGroup[] = [
     ],
   },
 ];
+
+const tags: Tag[] = [
+  { id: 1, name: "quick" },
+  { id: 2, name: "vegan" },
+  { id: 3, name: "vegetarian" },
+];
+
+const ingredient = (id: number, name: string, quantity: string): RecipeIngredient => ({
+  id,
+  ingredient: { id, name, plural: `${name}s` },
+  unit: unitGroups[0].units[0],
+  quantity,
+  display: `${quantity} pounds of ${name}`,
+  position: id,
+});
 
 const stored: Recipe = {
   id: 9,
@@ -41,12 +56,26 @@ const stored: Recipe = {
   user_rating: null,
 };
 
+/** A recipe with enough in it to be saved again untouched, which is what the
+ *  tests about one control need so they can leave the rest alone. */
+const filled: Recipe = {
+  ...stored,
+  ingredients: [ingredient(1, "beef", "2"), ingredient(2, "onion", "1")],
+  steps: [
+    { id: 1, text: "Brown the beef", position: 1 },
+    { id: 2, text: "Add the onion", position: 2 },
+  ],
+};
+
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
 
 /** Every request the form made, in order — the order is half of what is
  *  being asserted here. */
 let calls: string[] = [];
+/** The JSON bodies it sent, for the assertions that are about what was in
+ *  them rather than which endpoint took them. */
+let sent: Record<string, unknown>[] = [];
 let photoUploadFails = false;
 // Set by the test that wants to look at the form while the upload is still in
 // flight. Nothing else can tell an upload that finishes before the navigation
@@ -56,6 +85,7 @@ let releaseUpload: () => void = () => {};
 
 function stubServer(recipe: Recipe | null) {
   calls = [];
+  sent = [];
   photoUploadFails = false;
   holdUpload = false;
 
@@ -64,11 +94,17 @@ function stubServer(recipe: Recipe | null) {
     vi.fn(async (url: string, init: RequestInit = {}) => {
       const method = init.method ?? "GET";
       calls.push(`${method} ${url}`);
+      if (typeof init.body === "string") {
+        sent.push(JSON.parse(init.body) as Record<string, unknown>);
+      }
 
       if (url.startsWith("/api/units/")) {
         return json({ groups: unitGroups });
       }
-      if (url.startsWith("/api/tags/") || url.startsWith("/api/ingredients/")) {
+      if (url.startsWith("/api/tags/")) {
+        return json({ results: tags });
+      }
+      if (url.startsWith("/api/ingredients/")) {
         return json({ results: [] });
       }
       if (url.endsWith("/photo/")) {
@@ -119,10 +155,10 @@ async function fillForm() {
   fireEvent.change(screen.getByLabelText("Quantity"), { target: { value: "2" } });
   fireEvent.change(screen.getByLabelText("Unit"), { target: { value: "1" } });
   fireEvent.change(screen.getByLabelText("Ingredient"), { target: { value: "beef" } });
-  // The step box is the form's only textarea, and carries no label of its own.
-  fireEvent.change(document.querySelector("textarea") as HTMLTextAreaElement, {
-    target: { value: "Brown the beef" },
-  });
+  // By its label like every other box here. The numeral beside a step box is
+  // drawn by a CSS counter, which assistive tech never sees, so the box names
+  // itself — and reaching it this way is what keeps that true.
+  fireEvent.change(screen.getByLabelText("Step 1"), { target: { value: "Brown the beef" } });
 }
 
 beforeEach(() => {
@@ -132,6 +168,36 @@ beforeEach(() => {
 });
 
 afterEach(() => vi.unstubAllGlobals());
+
+describe("RecipeForm tags", () => {
+  const tagged: Recipe = { ...filled, tags: [tags[0]] };
+
+  it("carries the tags a recipe already has, and saves ids for what it ends with", async () => {
+    show("/recipes/9/edit", tagged);
+
+    // The field speaks in names because that is what it shows; the request
+    // carries ids, and this is the seam where the two have to agree.
+    expect(await screen.findByRole("button", { name: "Remove quick" })).toBeDefined();
+
+    fireEvent.click(screen.getByRole("button", { name: "Remove quick" }));
+    fireEvent.change(screen.getByLabelText("Tags"), { target: { value: "vegan" } });
+    fireEvent.click(screen.getByRole("button", { name: "vegan" }));
+
+    // Nothing else touched: this recipe already has everything a save needs.
+    save();
+
+    await waitFor(() => expect(calls).toContain("PATCH /api/recipes/9/"));
+    expect(sent[sent.length - 1].tags).toEqual([2]);
+  });
+
+  it("stops offering tags at the cap instead of letting the server refuse a sixth", async () => {
+    show("/recipes/9/edit", { ...stored, tags });
+
+    // Three of five, so there is still room and the box still takes a caret.
+    expect((await screen.findByLabelText("Tags")).getAttribute("disabled")).toBeNull();
+    expect(screen.getByText("3 of 5 tags chosen.")).toBeDefined();
+  });
+});
 
 describe("RecipeForm photos", () => {
   it("uploads the photo once the recipe exists, and waits for it before leaving", async () => {

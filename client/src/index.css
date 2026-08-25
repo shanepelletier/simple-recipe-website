@@ -547,18 +547,23 @@ main {
    live behind the caret, which makes the footprint independent of how many
    tags exist.
 
-   That is also what collapsed the filter bar back to one row: this is the last
-   control on the line rather than a block underneath it, and it takes the
-   slack the three fixed-width controls leave. The max-width is the part doing
-   real work — without it the field grows to whatever is left over, and a
-   700px-wide input holding two small tokens looks like a mistake. */
+   The max-width is the part doing real work — without it the field grows to
+   whatever is left over, and a 700px-wide input holding two small tokens looks
+   like a mistake. */
 .tagfield {
-  flex: 1 1 260px;
   max-width: 520px;
   display: flex;
   flex-direction: column;
   gap: 6px;
   position: relative;
+}
+
+/* Taking the filter row's slack is the filter bar's business, not the field's:
+   the recipe form renders the same control in a column where there is no slack
+   to take. It is also what collapsed the bar back to one row — the last control
+   on the line rather than a block underneath it. */
+.filters .tagfield {
+  flex: 1 1 260px;
 }
 
 .tagfield__label {
@@ -627,6 +632,16 @@ main {
   border: 0;
 }
 
+/* Where the field has a ceiling, reaching it takes the caret out rather than
+   letting someone type into a box that cannot accept the answer — and takes
+   its width with it, or a box holding its full complement of tokens keeps a
+   second, empty line open for a control that can no longer do anything. */
+.tagfield__input:disabled {
+  flex: 0 0 0;
+  min-width: 0;
+  cursor: not-allowed;
+}
+
 /* Overlays the results, so it takes the one shadow token. */
 .tagfield__menu {
   position: absolute;
@@ -672,6 +687,13 @@ main {
   padding: 8px 10px;
   font-size: 14px;
   color: var(--text);
+}
+
+/* The running count a capped field owes the user, at the size the rest of this
+   system's footnotes take. Tied to the input by aria-describedby, so it is read
+   out with the field rather than found later by someone sweeping the page. */
+.tagfield__count {
+  font-size: 13px;
 }
 
 /* One intrinsic track for every width instead of a breakpoint: the minimum
@@ -958,8 +980,35 @@ main {
   font-size: 14px;
 }
 
+/* A quantity is three or four digits and a unit is one word, so neither wants
+   the twenty-character default an input and a select arrive at. Left there,
+   the two of them ate a 720px row between them and pushed the ingredient —
+   the one field that genuinely needs room — onto a line of its own.
+
+   The exact figures are measured against the narrowest row this form has: a
+   phone-width middle column is 229px, and 88 + 12 + 124 is what fits the two
+   of them on one line there rather than three stacked fields per ingredient.
+   124px also clears "fluid ounce", the longest unit the catalog holds. Wrap
+   is the graceful failure if either ever outgrows this. */
+.quantity__amount input {
+  width: 88px;
+}
+
+.quantity__unit select {
+  width: 124px;
+}
+
+/* Takes what the other two don't need, and stops: the shopping list's add
+   form runs the full page column, and an ingredient box 700px wide holding
+   the word "beef" looks like a mistake. */
 .quantity__ingredient {
   position: relative;
+  flex: 1 1 200px;
+  max-width: 340px;
+}
+
+.quantity__ingredient input {
+  width: 100%;
 }
 
 .quantity__matches {
@@ -1031,20 +1080,93 @@ main {
   box-sizing: border-box;
 }
 
-.tag-picker {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 16px;
-  list-style: none;
-  padding: 0;
-  margin: 8px 0 24px;
+/* --- recipe form --- */
+
+/* The same 720px .detail reads a recipe at. A recipe is written at the width
+   it is read at, which is what the shared bracket down the left of both lists
+   was already claiming — while the form was in fact running step boxes to
+   1126px and stopping its ingredient rows at little over half of that, so it
+   held two measures at once and looked like two pages. */
+.recipe-form {
+  max-width: 720px;
+  margin-inline: auto;
 }
 
-.form__photo {
-  display: block;
-  max-width: 320px;
+/* More space above a section's heading than below it, so the heading reads as
+   belonging to what follows rather than floating between two blocks. The h2
+   itself carries `margin: 0 0 8px` system-wide, which is the other half. */
+.recipe-form__section {
+  margin-top: 32px;
+}
+
+/* A label directly above its control, which is what the browser default gets
+   wrong — with no gap the label crowds the box it names. The same shape the
+   filter bar, the quantity control, the comment form and the sign-in panel
+   each arrived at; stretching rather than compact, because these fields are
+   meant to take the column. The wrapper carries the gap too, so a field's
+   errors sit against the box that produced them. */
+.recipe-form__field,
+.recipe-form__field label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.recipe-form__field label {
+  font-size: 14px;
+}
+
+.recipe-form__field .field-errors {
+  margin: 0;
+}
+
+/* The box the recipe page will show this photo in, drawn at that ratio and
+   filled before there is anything in it. Choosing a photo then replaces a box
+   that is already the right size, instead of pushing the whole form down at
+   the moment the image decodes. */
+.recipe-form__photo {
+  width: 320px;
+  max-width: 100%;
+  aspect-ratio: 16 / 9;
+  margin-bottom: 12px;
+  background: var(--code-bg);
   border-radius: 8px;
-  margin: 8px 0;
+  overflow: hidden;
+}
+
+.recipe-form__photo img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.recipe-form__actions,
+.recipe-form__photo-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+/* A labeled file input beside a bare button: the label's text sits above its
+   control, so the two only line up if the row aligns on their bottom edges. */
+.recipe-form__photo-actions {
+  align-items: end;
+}
+
+.recipe-form__photo-actions label {
+  display: flex;
+  flex-direction: column;
+  /* Compact, unlike the fields above: a file input should sit at its own width
+     rather than stretch to the column the way a column-flex child does. */
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 14px;
+}
+
+.recipe-form__actions {
+  align-items: center;
+  margin-top: 32px;
 }
 
 /* --- shopping list --- */
