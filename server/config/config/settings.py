@@ -38,6 +38,10 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    # Required by Django's system checks (postgres.E005) to use GinIndex at
+    # all, even though nothing here uses the extra lookups (unaccent,
+    # full-text search) this app also registers.
+    "django.contrib.postgres",
     "accounts",
     "recipes",
 ]

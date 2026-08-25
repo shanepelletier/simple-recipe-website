@@ -1,7 +1,9 @@
 from django.conf import settings
+from django.contrib.postgres.indexes import GinIndex, OpClass
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxLengthValidator, MaxValueValidator, MinValueValidator
 from django.db import models
+from django.db.models.functions import Upper
 from django.db.models.signals import post_delete
 
 from .format import format_ingredient
@@ -108,6 +110,15 @@ class Recipe(models.Model):
             models.Index(fields=["-created_at"]),
             models.Index(fields=["name"]),
             models.Index(fields=["owner"]),
+            # The plain B-tree index above can't serve `?search=`: it's an
+            # icontains, a leading wildcard no B-tree can seek into. This one
+            # is over UPPER(name), not name — icontains on Postgres doesn't
+            # compile to ILIKE the way it might elsewhere; Django wraps both
+            # sides in UPPER() instead (for collation-independent casing), so
+            # an index on the bare column never matches what the query asks
+            # for and Postgres falls back to a sequential scan regardless of
+            # what's indexed. Confirmed with EXPLAIN before and after.
+            GinIndex(OpClass(Upper("name"), name="gin_trgm_ops"), name="recipe_name_trgm_idx"),
         ]
         permissions = [
             ("moderate_recipe", "Can edit and delete any recipe"),

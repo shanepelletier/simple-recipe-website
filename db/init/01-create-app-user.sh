@@ -13,4 +13,14 @@ psql -v ON_ERROR_STOP=1 --username postgres --dbname "$POSTGRES_DB" <<-EOSQL
     CREATE USER "$APP_DB_USER" WITH PASSWORD '$APP_DB_PASSWORD' CREATEDB;
     GRANT CONNECT ON DATABASE "$POSTGRES_DB" TO "$APP_DB_USER";
     GRANT CREATE, USAGE ON SCHEMA public TO "$APP_DB_USER";
+
+    -- Installing an extension needs database-level CREATE, which the grant
+    -- above doesn't cover (that's schema-level). $APP_DB_USER's own
+    -- migrations run "CREATE EXTENSION IF NOT EXISTS pg_trgm" (for the
+    -- recipe-name search index) as a no-op once it's already here, so this
+    -- is done as postgres rather than widening the app role's privileges.
+    -- pytest-django's throwaway test database needs no equivalent: it's
+    -- created BY $APP_DB_USER (via its CREATEDB grant), which makes that
+    -- role the owner and an owner's implicit CREATE covers this already.
+    CREATE EXTENSION IF NOT EXISTS pg_trgm;
 EOSQL
