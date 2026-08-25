@@ -21,3 +21,7 @@ Began and nearly finished frontend. Decided to switch to React rather than the e
 # August 23rd, 2026
 
 Finished frontend and began work on polishing documentation. Still need to polish frontend.
+
+# August 24th, 2026
+
+Worked on polishing documentation and frontend. Work is almost complete on the frontend, with just a few small issues to fix and an overall pass at consistency between pages required.
