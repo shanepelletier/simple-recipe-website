@@ -1,1 +1,4 @@
 - Real loading indicators instead of simple text.
+- End-to-end and integration tests.
+- An actual CI/CD setup.
+- Proper productionization.
