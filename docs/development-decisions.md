@@ -18,3 +18,4 @@ These are decisions that were made during development which could be useful for 
 - Recipe images are copied when recipes are copied, instead of pointing the copied recipe to the same image file. This is so that deleting a recipe doesn't remove the image from the copy (and deleting a copy doesn't remove the image from the original). A future change may be to use a sort of reference counting to remove stale images and keep only one copy of each image around.
 - Use React for the frontend. Originally I had chosen Angular as I wanted experience with a new stack, but as time constraints became tighter it made sense to switch to a framework I am at least slightly more familiar with.
 - Session auth instead of something like JWT. Adding JWT or similar would require another dependency and possibly additional code to handle token expiry and refresh.
+- Use `pg_trgm` with a GIN index to support efficient substring search of recipe names.
