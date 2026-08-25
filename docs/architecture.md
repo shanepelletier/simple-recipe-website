@@ -177,15 +177,13 @@ ShoppingItem }|--|| Unit: ""
 ShoppingItem }|--|| Recipe: ""
 ```
 
-# Data Dictionary
-
-# config - Data Dictionary
+## Data Dictionary
 
 Commit `7cd1651364a18d105360fc4a6660dc92c0a2d8e0`
 
 ---
 
-## Table of Contents [#](#toc)
+### Table of Contents [#](#toc)
 
 - [Table of Contents](#toc)
 - [Modules](#modules)
@@ -204,11 +202,11 @@ Commit `7cd1651364a18d105360fc4a6660dc92c0a2d8e0`
 
 ---
 
-## Modules [#](#modules)
+### Modules [#](#modules)
 
-### accounts
+#### accounts
 
-#### User[#](#User)
+##### User[#](#User)
 
 `User(id, password, last_login, is_superuser, username, first_name, last_name, email, is_staff, is_active, date_joined)`
 
@@ -230,9 +228,9 @@ migration dance, so it costs nothing now and a lot later.
 |  | is_staff | `boolean` |  | Designates whether the user can log into this admin site. |  |  |  |  |  |
 |  | is_active | `boolean` |  | Designates whether this user should be treated as active. Unselect this instead of deleting accounts. |  |  |  |  |  |
 |  | date_joined | `timestamp with time zone` |  |  |  |  |  |  |  |
-### recipes
+#### recipes
 
-#### Unit[#](#Unit)
+##### Unit[#](#Unit)
 
 `Unit(id, name, plural, abbreviation, category, takes_of)`
 
@@ -250,7 +248,7 @@ units.
 |  | category | `varchar` |  |  |  |  |  | 10 |  |
 |  | takes_of | `boolean` |  | True renders "2 pounds of beef", False renders "3 whole oranges". |  |  |  |  |  |
 
-#### Tag[#](#Tag)
+##### Tag[#](#Tag)
 
 `Tag(id, name)`
 
@@ -261,7 +259,7 @@ Created by admins only, via the Django admin.
 | ✓ | id | `bigint` |  |  |  |  |  |  |  |
 |  | name | `varchar` |  |  |  |  |  | 30 |  |
 
-#### Ingredient[#](#Ingredient)
+##### Ingredient[#](#Ingredient)
 
 `Ingredient(id, name, plural, normalized_name)`
 
@@ -272,7 +270,7 @@ Created by admins only, via the Django admin.
 |  | plural | `varchar` |  |  |  |  |  | 100 |  |
 |  | normalized_name | `varchar` |  |  |  |  |  | 100 | ✓ |
 
-#### Recipe[#](#Recipe)
+##### Recipe[#](#Recipe)
 
 `Recipe(id, owner, name, photo, rating_sum, rating_count, version, copied_from, copied_from_username, created_at, updated_at)`
 
@@ -290,7 +288,7 @@ Created by admins only, via the Django admin.
 |  | created_at | `timestamp with time zone` |  |  |  |  |  |  |  |
 |  | updated_at | `timestamp with time zone` |  |  |  |  |  |  |  |
 
-#### RecipeIngredient[#](#RecipeIngredient)
+##### RecipeIngredient[#](#RecipeIngredient)
 
 `RecipeIngredient(id, recipe, ingredient, unit, quantity, position)`
 
@@ -303,7 +301,7 @@ Created by admins only, via the Django admin.
 |  | quantity | `numeric` |  |  |  |  |  |  |  |
 |  | position | `smallint` |  |  |  |  |  |  |  |
 
-#### Step[#](#Step)
+##### Step[#](#Step)
 
 `Step(id, recipe, text, position)`
 
@@ -314,7 +312,7 @@ Created by admins only, via the Django admin.
 |  | text | `text` |  |  |  |  |  |  |  |
 |  | position | `smallint` |  |  |  |  |  |  |  |
 
-#### Review[#](#Review)
+##### Review[#](#Review)
 
 `Review(id, recipe, user, rating, created_at)`
 
@@ -326,7 +324,7 @@ Created by admins only, via the Django admin.
 |  | rating | `smallint` |  |  |  |  |  |  |  |
 |  | created_at | `timestamp with time zone` |  |  |  |  |  |  |  |
 
-#### Comment[#](#Comment)
+##### Comment[#](#Comment)
 
 `Comment(id, recipe, author, body, photo, created_at)`
 
@@ -339,7 +337,7 @@ Created by admins only, via the Django admin.
 |  | photo | `varchar` |  |  | ✓ |  |  | 100 |  |
 |  | created_at | `timestamp with time zone` |  |  |  |  |  |  |  |
 
-#### ShoppingItem[#](#ShoppingItem)
+##### ShoppingItem[#](#ShoppingItem)
 
 `ShoppingItem(id, user, ingredient, unit, quantity, is_checked, source_recipe, created_at)`
 
