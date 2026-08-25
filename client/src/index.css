@@ -275,18 +275,28 @@ button,
 /* The same move the recipe card makes on hover: the border takes the accent
    and a wash comes up underneath. A filled green button would be the accent
    used as a surface, which this system doesn't do. */
-button:hover:not(:disabled),
+button:hover:not(:disabled):not([aria-disabled="true"]),
 .btn-link:hover {
   border-color: var(--accent-border);
   background: var(--accent-bg);
 }
 
-button:disabled {
+/* aria-disabled reads the same as disabled: a button that cannot currently
+   act looks like one everywhere in this app, whichever attribute says so.
+   The two exist for different reasons — disabled takes a control out of the
+   tab order entirely, aria-disabled keeps it reachable and just refuses the
+   click — and the pager's Previous/Next need the second one. Disabling the
+   button a keyboard user just activated knocks focus out to <body>, so the
+   next Tab starts over from the top of the page instead of continuing from
+   the pager. */
+button:disabled,
+button[aria-disabled="true"] {
   opacity: 0.55;
   cursor: not-allowed;
 }
 
-button:disabled:hover {
+button:disabled:hover,
+button[aria-disabled="true"]:hover {
   border-color: var(--border);
 }
 

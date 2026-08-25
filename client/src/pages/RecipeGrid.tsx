@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router";
 
 import { RecipeCard } from "../components/RecipeCard";
@@ -217,6 +217,24 @@ function Results({
   onClearFilters,
   onPage,
 }: ResultsProps) {
+  // The skeleton below replaces this whole tree while the next page loads,
+  // taking the button that was just clicked with it — a keyboard user who
+  // pressed Next loses their place to <body> on every page change, not only
+  // the one that lands on a boundary. The ref survives that swap because
+  // Results itself never unmounts, only what it returns; once the real pager
+  // is back, this puts focus on the button that plays the same part in it.
+  const pendingFocus = useRef<"previous" | "next" | null>(null);
+  const previousRef = useRef<HTMLButtonElement>(null);
+  const nextRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (loading || pendingFocus.current === null) {
+      return;
+    }
+    (pendingFocus.current === "previous" ? previousRef : nextRef).current?.focus();
+    pendingFocus.current = null;
+  }, [loading]);
+
   if (failed) {
     return (
       <div className="state">
@@ -280,20 +298,43 @@ function Results({
 
       {data.pages > 1 && (
         <nav className="pager">
-          <button type="button" disabled={data.page <= 1} onClick={() => onPage(data.page - 1)}>
+          {/* aria-disabled, not disabled: a native disabled attribute pulls
+              the button out of the tab order the moment it takes effect,
+              which for Next is the moment a keyboard user just activated it —
+              landing on the last page silently punts focus to <body>, and
+              the next Tab starts over from the top of the page instead of
+              continuing from the pager. aria-disabled keeps the button
+              reachable and just refuses the click, so the control that
+              cannot currently act still holds still. */}
+          <button
+            ref={previousRef}
+            type="button"
+            aria-disabled={data.page <= 1 ? true : undefined}
+            onClick={() => {
+              if (data.page > 1) {
+                pendingFocus.current = "previous";
+                onPage(data.page - 1);
+              }
+            }}
+          >
             Previous
           </button>
-          {/* Focus stays on the button that was clicked — that part is already
-              right — but nothing said the page actually changed to whoever
-              can't see the new cards land. role="status" announces this
-              itself without moving focus off the button. */}
+          {/* The status announces the change to whoever can't see the new
+              cards land; the effect above puts focus back on the button once
+              they're there, for whoever can't stay on it through the reload. */}
           <span role="status">
             Page {data.page} of {data.pages}
           </span>
           <button
+            ref={nextRef}
             type="button"
-            disabled={data.page >= data.pages}
-            onClick={() => onPage(data.page + 1)}
+            aria-disabled={data.page >= data.pages ? true : undefined}
+            onClick={() => {
+              if (data.page < data.pages) {
+                pendingFocus.current = "next";
+                onPage(data.page + 1);
+              }
+            }}
           >
             Next
           </button>
