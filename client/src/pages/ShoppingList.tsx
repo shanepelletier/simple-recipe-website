@@ -3,6 +3,7 @@ import type { SubmitEvent } from "react";
 import { Link } from "react-router";
 
 import { QuantityInput } from "../components/QuantityInput";
+import { RemoveButton } from "../components/RemoveButton";
 import * as api from "../core/api";
 import { asApiError } from "../core/client";
 import type { ShoppingGroup, ShoppingItem, UnitGroup } from "../core/models";
@@ -14,13 +15,13 @@ import { useUnits } from "../core/units";
 
 export default function ShoppingList() {
   return (
-    <>
+    <div className="shopping">
       {/* Outside every state below on purpose: a list that is still loading, or
           that failed to load, is still the shopping list. Only the part under
           the heading depends on what the request did. */}
       <h1>Shopping list</h1>
       <List />
-    </>
+    </div>
   );
 }
 
@@ -29,7 +30,15 @@ function List() {
   const units = useUnits();
 
   if (list.loading || units.loading) {
-    return <p>Loading your shopping list…</p>;
+    return (
+      // The same dashed footprint the empty and error states take, rather than
+      // a line of text floating where the list will be: all three are "the
+      // list is not here yet", and they should not each look like a different
+      // page.
+      <div className="state" aria-busy="true">
+        <p>Loading your shopping list…</p>
+      </div>
+    );
   }
 
   if (list.error !== null) {
@@ -145,27 +154,31 @@ function Row({
 
   return (
     <li className={item.is_checked ? "shopping__row shopping__row--checked" : "shopping__row"}>
-      <label>
-        {/* Driven by the server's answer, never by the click. Ticking the box
-            optimistically means a failed request leaves it ticked, and the
-            list is then telling the user something that is not true. */}
-        <input type="checkbox" checked={item.is_checked} disabled={busy} onChange={onToggle} />
-        <span className="shopping__display">{item.display}</span>
-      </label>
+      <div className="shopping__line">
+        <label>
+          {/* Driven by the server's answer, never by the click. Ticking the box
+              optimistically means a failed request leaves it ticked, and the
+              list is then telling the user something that is not true. */}
+          <input type="checkbox" checked={item.is_checked} disabled={busy} onChange={onToggle} />
+          <span className="shopping__display">{item.display}</span>
+        </label>
 
-      {/* Shown only when the source is known. A null source_recipe_id is
-          ambiguous — the item was added by hand, or its recipe has since been
-          deleted (the FK is SET_NULL so the item survives) — and there is no
-          way to tell those apart, so neither is claimed. */}
-      {item.source_recipe_id !== null && (
-        <Link className="shopping__source" to={`/recipes/${item.source_recipe_id}`}>
-          From a recipe
-        </Link>
-      )}
+        {/* Shown only when the source is known. A null source_recipe_id is
+            ambiguous — the item was added by hand, or its recipe has since been
+            deleted (the FK is SET_NULL so the item survives) — and there is no
+            way to tell those apart, so neither is claimed. */}
+        {item.source_recipe_id !== null && (
+          <Link className="shopping__source" to={`/recipes/${item.source_recipe_id}`}>
+            From a recipe
+          </Link>
+        )}
+      </div>
 
-      <button type="button" onClick={onDelete} disabled={busy}>
-        Remove
-      </button>
+      {/* The same mark the recipe editor uses to drop a row, for the same
+          reason: the word spelled out in full button chrome on every line was
+          the heaviest thing on a page whose content is a column of short
+          sentences. The sentence is still what a screen reader hears. */}
+      <RemoveButton label={`Remove ${item.display}`} disabled={busy} onClick={onDelete} />
 
       {failed && <span role="alert">Didn&rsquo;t work. Try again.</span>}
     </li>

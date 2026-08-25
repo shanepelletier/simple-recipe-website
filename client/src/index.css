@@ -1310,6 +1310,21 @@ main {
 
 /* --- shopping list --- */
 
+/* Narrower than the 720px a recipe is read and written at, and deliberately.
+   That measure is for text you read through; this is eleven short lines you
+   scan against a shelf, and the longest one the catalog can produce — a
+   quantity, a unit, an ingredient and the note that it came from a recipe —
+   lands just inside 500px. The remaining room is the mark that removes the
+   line, which is why the column stops here rather than at a round number: any
+   wider and that mark strands itself away from the line it acts on, which is
+   the same thing that pulled the detail page's ingredient rows back together.
+   The rule above the add-form comes in with it, so the page reads as one
+   column rather than as a list with a full-width rule under it. */
+.shopping {
+  max-width: 560px;
+  margin-inline: auto;
+}
+
 .shopping__group {
   margin: 0 0 24px;
 }
@@ -1345,23 +1360,52 @@ main {
   gap: 10px;
 }
 
+/* Two columns that cannot wrap: everything the line says, and the one mark
+   that takes it away. Laid out as a wrapping flex row instead — which is what
+   this was — a row stood one, two or three lines tall depending on how long
+   the ingredient's name happened to be, and the mark landed at a different
+   place on every row, so a list of eleven short lines read as a staircase of
+   buttons rather than as a column of things to buy. */
 .shopping__row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  column-gap: 12px;
+}
+
+/* The text and its provenance share the first column and wrap inside it, so a
+   long name pushes the note onto a second line without ever pushing the mark
+   off the end of the row. */
+.shopping__line {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 12px;
+  gap: 4px 12px;
+  min-width: 0;
 }
 
+/* The target is the whole label rather than the 18px box, which is what the
+   padding buys — it costs no height, since the mark on the other end of the
+   row already stands 44px tall. */
 .shopping__row label {
   display: flex;
   align-items: center;
   gap: 8px;
+  padding: 6px 0;
 }
 
 /* Struck through where it stands. Moving checked lines to the bottom would
-   reorder the list under the finger that just tapped it. */
+   reorder the list under the finger that just tapped it.
+
+   The note fades with the text it belongs to: a struck-out line with a fully
+   lit link beside it reads as half-finished rather than as done. The mark that
+   removes the line keeps its weight, because it is still offering something. */
 .shopping__row--checked .shopping__display {
   text-decoration: line-through;
+}
+
+.shopping__row--checked .shopping__display,
+.shopping__row--checked .shopping__source {
   opacity: 0.6;
 }
 
@@ -1370,14 +1414,53 @@ main {
   color: var(--text-h);
 }
 
+/* A link, but a footnote-sized one standing beside the thing it annotates, so
+   it takes the muted ink the Apparatus Rule gives everything framing content
+   rather than the browser's own blue — which is the loudest color on an
+   otherwise warm page and belongs to no design system. The hairline is what
+   still says "link" once the color is gone, and it goes to the accent on hover
+   the way the header's nav underline does. */
 .shopping__source {
   font-size: 13px;
+  color: var(--text);
+  text-decoration: none;
+  border-bottom: 1px solid var(--border);
 }
 
+.shopping__source:hover {
+  color: var(--text-h);
+  border-bottom-color: var(--accent);
+}
+
+/* The row's own error, and the only thing here allowed to take a second line —
+   it spans both columns rather than squeezing in beside the mark. */
+.shopping__row [role="alert"] {
+  grid-column: 1 / -1;
+  font-size: 15px;
+}
+
+/* Closed off by a rule: what is above it is the list, what is below it is the
+   way to add to it. The gaps are the form's own, rather than the default
+   margins the heading and the control happened to arrive with — which put the
+   submit button hard against the fields with nothing but the preview line's
+   reserved height between them. */
 .shopping__add {
   margin: 32px 0 0;
   padding-top: 16px;
   border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.shopping__add h2 {
+  margin: 0;
+}
+
+/* Direct child on purpose: the ingredient autocomplete's rows are buttons too,
+   and they are not this one. */
+.shopping__add > button {
+  align-self: start;
 }
 
 /* --- a save that only partly landed --- */

@@ -103,7 +103,9 @@ function show() {
 
 const line = (text: string) => screen.getByText(text).closest("li") as HTMLElement;
 const box = (text: string) => within(line(text)).getByRole("checkbox");
-const remove = (text: string) => within(line(text)).getByRole("button", { name: "Remove" });
+/** The mark is a drawn ✕, so the whole sentence is its accessible name — which
+ *  is also the only thing telling eleven identical marks apart. */
+const remove = (text: string) => within(line(text)).getByRole("button", { name: `Remove ${text}` });
 
 beforeEach(() => stubServer());
 afterEach(() => vi.unstubAllGlobals());
