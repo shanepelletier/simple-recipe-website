@@ -1,0 +1,22 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# User-uploaded and generated media
+config/media/
+
+# collectstatic output. Written into a volume in the container; only appears
+# here if collectstatic is ever run on the host.
+config/staticfiles/
+
+# Various caches
+.mypy_cache
+.pytest_cache
+.ruff_cache
