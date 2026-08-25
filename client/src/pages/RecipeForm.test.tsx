@@ -82,12 +82,17 @@ let photoUploadFails = false;
 // from one that finishes after it.
 let holdUpload = false;
 let releaseUpload: () => void = () => {};
+// Set by the conflict tests. Only affects a PATCH — the same fallback branch
+// also serves the initial GET when editing an existing recipe, and that load
+// has to succeed for there to be a form on screen to submit.
+let patchConflicts = false;
 
 function stubServer(recipe: Recipe | null) {
   calls = [];
   sent = [];
   photoUploadFails = false;
   holdUpload = false;
+  patchConflicts = false;
 
   vi.stubGlobal(
     "fetch",
@@ -125,6 +130,17 @@ function stubServer(recipe: Recipe | null) {
       }
       if (method === "POST") {
         return json({ recipe: { ...stored, ...recipe } });
+      }
+      if (method === "PATCH" && patchConflicts) {
+        return json(
+          {
+            error:
+              "This recipe was changed by someone else while you were editing. " +
+              "Reload to see the current version.",
+            fields: {},
+          },
+          409,
+        );
       }
       return json({ recipe: { ...stored, ...recipe, version: 2 } });
     }),
@@ -356,5 +372,53 @@ describe("RecipeForm validation", () => {
     expect(document.getElementById(describedBy as string)?.textContent).toBe(
       "Give the recipe a name.",
     );
+  });
+});
+
+describe("RecipeForm conflicts", () => {
+  it("shows the conflict panel on a 409 and leaves the typed values on screen", async () => {
+    show("/recipes/9/edit", filled);
+    const nameInput = (await screen.findByLabelText("Name")) as HTMLInputElement;
+    patchConflicts = true;
+
+    fireEvent.change(nameInput, { target: { value: "Renamed Chili" } });
+    save();
+
+    expect(
+      await screen.findByText("Someone else edited this recipe while you were working on it"),
+    ).toBeDefined();
+    // The whole point of the panel: nothing typed is thrown away for the user
+    // to retype after they decide what to do about the conflict.
+    expect(nameInput.value).toBe("Renamed Chili");
+    expect(screen.queryByText("Recipe page")).toBeNull();
+  });
+
+  it("re-enables Save after a conflict, so retrying doesn't need a page refresh", async () => {
+    show("/recipes/9/edit", filled);
+    await screen.findByLabelText("Name");
+    patchConflicts = true;
+
+    save();
+    await screen.findByText(/Someone else edited this recipe/);
+
+    // A spinner that never stops: the conflict path returns early, so it
+    // only re-enables if the `finally` that resets `saving` actually runs
+    // on that path too.
+    expect(
+      (screen.getByRole("button", { name: "Save recipe" }) as HTMLButtonElement).disabled,
+    ).toBe(false);
+  });
+
+  it("clears a stale conflict panel once a save succeeds", async () => {
+    show("/recipes/9/edit", filled);
+    await screen.findByLabelText("Name");
+    patchConflicts = true;
+    save();
+    await screen.findByText(/Someone else edited this recipe/);
+
+    patchConflicts = false;
+    save();
+
+    await waitFor(() => expect(screen.queryByText(/Someone else edited this recipe/)).toBeNull());
   });
 });
