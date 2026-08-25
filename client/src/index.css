@@ -260,6 +260,33 @@ button:disabled:hover {
   text-decoration: none;
 }
 
+/* A button that is only its mark: no border, no fill, the muted ink everything
+   else framing the content takes, and the full 44px target underneath it all
+   the same. Where a row carries one small action — remove this ingredient,
+   remove this line — a bordered button repeated down the page is a column of
+   boxes louder than the text it acts on, and the box is not the information.
+
+   The border is transparent rather than absent so gaining the hover mark
+   doesn't move the marks beside it, the same trick the header's nav links use
+   for their underline. */
+.icon-button {
+  width: 44px;
+  padding: 0;
+  color: var(--text);
+  background: none;
+  border-color: transparent;
+}
+
+.icon-button:hover:not(:disabled) {
+  color: var(--text-h);
+}
+
+/* Without this the shared disabled-hover rule puts a visible border back on a
+   button that is explicitly not offering anything. */
+.icon-button:disabled:hover {
+  border-color: transparent;
+}
+
 /* Native chrome swapped for the system's own, with the disclosure arrow drawn
    rather than typed. It is a background image per scheme instead of one glyph,
    because a text arrow inherits the font and goes stale against a drawn UI. */
@@ -1111,29 +1138,8 @@ main {
   overflow: hidden;
 }
 
-/* Quiet at rest and the ordinary button on hover. The border is transparent
-   rather than absent so gaining the hover mark doesn't move the marks beside
-   it — the same trick the header's nav links use for their underline. */
-.rows__handle,
-.rows__button {
-  width: 44px;
-  padding: 0;
-  color: var(--text);
-  background: none;
-  border-color: transparent;
-}
-
-.rows__handle:hover:not(:disabled),
-.rows__button:hover:not(:disabled) {
-  color: var(--text-h);
-}
-
-/* Without this the shared disabled-hover rule puts a visible border back on a
-   button that is explicitly not offering anything. */
-.rows__button:disabled:hover {
-  border-color: transparent;
-}
-
+/* The grip takes .icon-button's chrome from the control layer and adds only
+   what is true of a handle and nothing else. */
 .rows__handle {
   cursor: grab;
   /* Or the browser takes the gesture as a scroll and the row never moves —

@@ -3,6 +3,7 @@ import type { SubmitEvent } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 
 import { QuantityInput } from "../components/QuantityInput";
+import { RemoveButton } from "../components/RemoveButton";
 import { SortableRows } from "../components/SortableRows";
 import { TagField } from "../components/TagField";
 import * as api from "../core/api";
@@ -378,7 +379,7 @@ function Editor({
                   setIngredients((rows) => updateRow(rows, row.key, value))
                 }
               />
-              <RowButton
+              <RemoveButton
                 label={`Remove ${describeIngredient(row, index)}`}
                 disabled={ingredients.length === 1}
                 onClick={() => setIngredients((rows) => removeRow(rows, row.key))}
@@ -422,7 +423,7 @@ function Editor({
                   setSteps((rows) => updateRow(rows, row.key, { text: event.target.value }));
                 }}
               />
-              <RowButton
+              <RemoveButton
                 label={`Remove ${describeStep(row, index)}`}
                 disabled={steps.length === 1}
                 onClick={() => setSteps((rows) => removeRow(rows, row.key))}
@@ -498,44 +499,4 @@ function fitToText(box: HTMLTextAreaElement | null) {
   }
   box.style.height = "auto";
   box.style.height = `${box.scrollHeight}px`;
-}
-
-/**
- * The one thing left to do to a row that reordering does not cover.
- *
- * Drawn at the same stroke weight as the select's chevron and the tag token's
- * close mark; a typed × would inherit the text font and go stale against every
- * other mark in the app. The target stays 44px square even though the mark is
- * small — this form gets used one-handed in a kitchen — and the button keeps
- * the whole sentence as its accessible name while the tooltip stays short,
- * since "Remove olive oil" on every row is the wall of words this replaced.
- */
-function RowButton({
-  label,
-  disabled,
-  onClick,
-}: {
-  label: string;
-  disabled: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      className="rows__button"
-      aria-label={label}
-      title="Remove"
-      disabled={disabled}
-      onClick={onClick}
-    >
-      <svg width="16" height="16" viewBox="0 0 14 14" fill="none" aria-hidden="true">
-        <path
-          d="M3.5 3.5l7 7M10.5 3.5l-7 7"
-          stroke="currentColor"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-        />
-      </svg>
-    </button>
-  );
 }

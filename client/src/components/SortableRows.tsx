@@ -142,7 +142,7 @@ function Row({ id, label, children }: { id: number; label: string; children: Rea
       <button
         type="button"
         ref={setActivatorNodeRef}
-        className="rows__handle"
+        className="icon-button rows__handle"
         // Spread first so the label below wins: dnd-kit sets a role and a
         // description here, and the name of the row is ours to give.
         {...attributes}
