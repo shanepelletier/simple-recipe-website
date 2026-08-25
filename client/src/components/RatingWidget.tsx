@@ -14,6 +14,8 @@ interface Props {
   average: number | null;
   count: number;
   userRating: number | null;
+  /** True for the recipe's own author — they can't rate their own recipe. */
+  isOwner: boolean;
   /**
    * Handed straight up to whoever owns the Recipe, which folds it back in.
    *
@@ -26,7 +28,7 @@ interface Props {
   onRated: (response: RatingResponse) => void;
 }
 
-export function RatingWidget({ recipeId, average, count, userRating, onRated }: Props) {
+export function RatingWidget({ recipeId, average, count, userRating, isOwner, onRated }: Props) {
   const { user } = useAuth();
   const location = useLocation();
   const [hover, setHover] = useState<number | null>(null);
@@ -86,7 +88,7 @@ export function RatingWidget({ recipeId, average, count, userRating, onRated }: 
           ))}
         </span>
 
-        {user !== null && (
+        {user !== null && !isOwner && (
           <span className="rating__user">
             {STARS.map((star) => (
               <button
@@ -130,6 +132,8 @@ export function RatingWidget({ recipeId, average, count, userRating, onRated }: 
           <Link to={withNext("/login", returnTo(location))}>Sign in</Link> to rate this recipe.
         </p>
       )}
+
+      {isOwner && <p className="rating__summary">You can't rate your own recipe.</p>}
 
       {failure !== "" && <p role="alert">{failure}</p>}
     </div>

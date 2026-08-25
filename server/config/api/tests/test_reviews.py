@@ -14,8 +14,8 @@ def put_rating(client, pk, rating):
 
 
 @pytest.mark.django_db
-def test_rating_a_recipe_updates_the_denormalized_counters(auth_client, author, make_recipe):
-    recipe = make_recipe(author)
+def test_rating_a_recipe_updates_the_denormalized_counters(auth_client, other_user, make_recipe):
+    recipe = make_recipe(other_user)
 
     body = put_rating(auth_client, recipe.pk, 4).json()
 
@@ -24,8 +24,8 @@ def test_rating_a_recipe_updates_the_denormalized_counters(auth_client, author, 
 
 
 @pytest.mark.django_db
-def test_rating_twice_updates_rather_than_duplicating(auth_client, author, make_recipe):
-    recipe = make_recipe(author)
+def test_rating_twice_updates_rather_than_duplicating(auth_client, other_user, make_recipe):
+    recipe = make_recipe(other_user)
 
     put_rating(auth_client, recipe.pk, 5)
     body = put_rating(auth_client, recipe.pk, 2).json()
@@ -33,6 +33,18 @@ def test_rating_twice_updates_rather_than_duplicating(auth_client, author, make_
     assert Review.objects.filter(recipe=recipe).count() == 1
     assert body["recipe"]["rating"] == 2.0
     assert body["recipe"]["rating_count"] == 1
+
+
+@pytest.mark.django_db
+def test_rating_your_own_recipe_is_forbidden(auth_client, author, make_recipe):
+    recipe = make_recipe(author)
+
+    response = put_rating(auth_client, recipe.pk, 5)
+
+    assert response.status_code == 403
+    assert Review.objects.filter(recipe=recipe).count() == 0
+    recipe.refresh_from_db()
+    assert recipe.rating_count == 0
 
 
 @pytest.mark.django_db
@@ -52,9 +64,9 @@ def test_counters_match_the_review_rows_after_several_writes(
 
 @pytest.mark.django_db
 def test_deleting_a_review_subtracts_only_that_review_from_the_counters(
-    auth_client, author, other_user, make_recipe
+    auth_client, other_user, make_user, make_recipe
 ):
-    recipe = make_recipe(author)
+    recipe = make_recipe(make_user("owner"))
     put_rating(auth_client, recipe.pk, 5)
 
     # auth_client reuses the `client` fixture under the hood, so a second

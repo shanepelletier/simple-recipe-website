@@ -37,6 +37,9 @@ def review_upsert(request, pk):
         # write silently discards the first.
         recipe = get_object_or_404(Recipe.objects.select_for_update(), pk=pk)
 
+        if recipe.owner_id == request.user.id:
+            return error("You can't rate your own recipe.", status=403)
+
         review, created = Review.objects.get_or_create(
             recipe=recipe, user=request.user, defaults={"rating": rating}
         )

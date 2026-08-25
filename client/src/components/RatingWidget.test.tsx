@@ -34,7 +34,12 @@ beforeEach(() => {
 
 afterEach(() => vi.unstubAllGlobals());
 
-function show(userRating: number | null, auth: AuthValue = signedIn, average: number | null = 3) {
+function show(
+  userRating: number | null,
+  auth: AuthValue = signedIn,
+  average: number | null = 3,
+  isOwner = false,
+) {
   render(
     <AuthContext.Provider value={auth}>
       <MemoryRouter>
@@ -43,6 +48,7 @@ function show(userRating: number | null, auth: AuthValue = signedIn, average: nu
           average={average}
           count={2}
           userRating={userRating}
+          isOwner={isOwner}
           onRated={() => {}}
         />
       </MemoryRouter>
@@ -108,6 +114,13 @@ describe("RatingWidget", () => {
 
     expect(screen.queryByRole("button")).toBeNull();
     expect(screen.getByRole("link", { name: "Sign in" })).toBeDefined();
+  });
+
+  it("offers no stars to the recipe's own author", () => {
+    show(null, signedIn, 3, true);
+
+    expect(screen.queryByRole("button")).toBeNull();
+    expect(screen.getByText("You can't rate your own recipe.")).toBeDefined();
   });
 
   it("states both numbers in words, since colour alone cannot carry them", () => {

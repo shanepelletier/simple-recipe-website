@@ -43,8 +43,8 @@ def test_detail_says_a_stranger_cannot_edit(client, author, make_recipe):
 
 
 @pytest.mark.django_db
-def test_detail_reports_the_signed_in_users_own_rating(auth_client, author, make_recipe):
-    recipe = make_recipe(author)
+def test_detail_reports_the_signed_in_users_own_rating(auth_client, other_user, make_recipe):
+    recipe = make_recipe(other_user)
 
     assert auth_client.get(f"/api/recipes/{recipe.pk}/").json()["recipe"]["user_rating"] is None
 

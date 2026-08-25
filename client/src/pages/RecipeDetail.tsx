@@ -145,6 +145,7 @@ function Loaded({ recipe, onRated }: { recipe: Recipe; onRated: (r: RatingRespon
         average={recipe.rating}
         count={recipe.rating_count}
         userRating={recipe.user_rating}
+        isOwner={user !== null && user.username === recipe.owner}
         onRated={onRated}
       />
 
