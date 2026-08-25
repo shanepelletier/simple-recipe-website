@@ -58,6 +58,8 @@ git clone https://github.com/shanepelletier/simple-recipe-website
 cd simple-recipe-website
 ```
 
+A pre-commit hook is included to ensure tests pass before committing changes. If you wish to use it, run `git config core.hooksPath .githooks`.
+
 Then copy the provided `.env.example` file to `.env`:
 
 ```
