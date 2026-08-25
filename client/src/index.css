@@ -160,6 +160,44 @@ code {
   background: var(--code-bg);
 }
 
+/* --- links in running text --- */
+
+/* Every link that is not a card, a nav item, or a button wearing a link's
+   markup: "Sign in to rate this recipe", "Copied from alice", "Added to your
+   shopping list", "Find a recipe". Left to the browser these shipped its blue
+   and, once followed, its purple — the two loudest colors on a page whose
+   every neutral was chosen for its warmth, and the only marks in the app that
+   belong to no design system. They turned up in six places rather than one,
+   which is what a wrong default does: it costs nothing to leave alone.
+
+   The word keeps the page's ink, because it is part of the sentence rather
+   than apparatus around it. The accent does its marking in the rule
+   underneath — the same job it does under the active nav item and down the
+   side of a shopping group — and comes to full strength on hover.
+
+   Underlined rather than colored, and not only for taste: inside a paragraph
+   the underline is the cue that survives a reader who cannot separate the two
+   hues from each other. Drawn with `text-decoration` rather than the 2px
+   transparent border the nav and the sign-in footer use, because only this
+   one skips the descenders and breaks correctly across a wrapped line.
+
+   Nothing below needs to undo this by hand. .card, .btn-link, .site-nav a,
+   .site-user a, .auth__footer a and .shopping__source all set their own color
+   and their own `text-decoration: none`, and every one of them is class-based
+   and so outranks a bare element selector. */
+a {
+  color: var(--text-h);
+  text-decoration-line: underline;
+  text-decoration-color: var(--accent-border);
+  text-decoration-thickness: 1px;
+  /* Clear of the descenders rather than straight through them. */
+  text-underline-offset: 0.18em;
+}
+
+a:hover {
+  text-decoration-color: var(--accent);
+}
+
 /* --- controls --- */
 
 /* One focus treatment for everything focusable. `:focus-visible` rather than
