@@ -1,0 +1,1 @@
+- Real loading indicators instead of simple text.
