@@ -75,7 +75,13 @@ export default function App() {
     <>
       <Header />
       <main>
-        <Suspense fallback={<p>Loading…</p>}>
+        <Suspense
+          fallback={
+            <div className="state" aria-busy="true">
+              <p>Loading…</p>
+            </div>
+          }
+        >
           <Routes>
             {ROUTES.map(({ path, element, guarded }) => (
               <Route
