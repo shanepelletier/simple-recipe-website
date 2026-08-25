@@ -283,7 +283,11 @@ function Results({
           <button type="button" disabled={data.page <= 1} onClick={() => onPage(data.page - 1)}>
             Previous
           </button>
-          <span>
+          {/* Focus stays on the button that was clicked — that part is already
+              right — but nothing said the page actually changed to whoever
+              can't see the new cards land. role="status" announces this
+              itself without moving focus off the button. */}
+          <span role="status">
             Page {data.page} of {data.pages}
           </span>
           <button
