@@ -1310,18 +1310,17 @@ main {
 
 /* --- shopping list --- */
 
-/* Narrower than the 720px a recipe is read and written at, and deliberately.
-   That measure is for text you read through; this is eleven short lines you
-   scan against a shelf, and the longest one the catalog can produce — a
-   quantity, a unit, an ingredient and the note that it came from a recipe —
-   lands just inside 500px. The remaining room is the mark that removes the
-   line, which is why the column stops here rather than at a round number: any
-   wider and that mark strands itself away from the line it acts on, which is
-   the same thing that pulled the detail page's ingredient rows back together.
-   The rule above the add-form comes in with it, so the page reads as one
-   column rather than as a list with a full-width rule under it. */
+/* The same column .detail and .recipe-form take, and for a reason that has
+   nothing to do with this page's own content: those two share an exact left
+   edge, and every page that is not the grid has to start on it. A measure
+   fitted to the longest line this list can produce came out narrower — and
+   landed the whole page 87px inboard of every other one, which reads as a
+   different app rather than as a tighter column.
+
+   The measure is a property of the site, not of the page. A surface picks one
+   of the three the site has; it does not size its own. */
 .shopping {
-  max-width: 560px;
+  max-width: 720px;
   margin-inline: auto;
 }
 
