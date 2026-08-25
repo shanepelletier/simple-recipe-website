@@ -12,6 +12,8 @@ A simple recipe website built using Django, PostgreSQL, and React.
 - Recipes have two views: a grid overview that supports sorting and filtering, and a details view that shows the details of a single recipe.
 - A recipe has a name, tags, rating, list of ingredients, and steps. Ingredients are structured quantities which are combined together when added to shopping lists.
 - A shopping list can be created by adding all ingredients from a recipe or by adding individual ingredients directly to the shopping list.
+- Adding multiple ingredients with the same unit to the shopping list combines them by adding their quantities.
+- Adding multiple ingredients with the same ingredient type (for example, flour) but different measurements (for example, cups and grams) add the ingredients under the same "flour" row but leave the ingredients separate, as accurately converting between ingredient types is impossible in the general case.
 
 # Deploying
 
@@ -87,3 +89,13 @@ npm run dev
 Open http://localhost:5173 to see the website.
 
 To stop, press `Ctrl+C` in both terminals and run `docker compose down db`; add `-v` to discard the database and uploaded photos as well.
+
+## Running tests
+
+To run the backend tests:
+
+- From the `server/` directory, run `uv run --env-file ../.env pytest`. Note that tests require an actual DB to run against; see above for instructions on starting one.
+
+To run the frontend tests:
+
+- From the `client/` directory, run `npm run test`.
