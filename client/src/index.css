@@ -31,6 +31,12 @@
      color from the palette and an SVG data URI can't read a custom property. */
   --select-arrow: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="8" fill="none"><path d="M1 1.75 6 6.25l5-4.5" stroke="%236b6459" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg>');
 
+  /* A drawn photo glyph for the no-photo state, same reasoning as
+     --select-arrow above. Flat --code-bg alone read as an unloaded image
+     rather than a deliberate "no photo" state, so the placeholder needs its
+     own mark instead of just a fill. */
+  --no-photo-icon: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%23c9c4b4" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="4.5" width="19" height="15" rx="2"/><circle cx="8.5" cy="10" r="1.6"/><path d="M22 15.5l-6-5.5-4.5 4-3-2.5L2 16"/></svg>');
+
   --sans: "Source Sans 3 Variable", system-ui, "Segoe UI", Roboto, sans-serif;
   --heading: "Fraunces Variable", Georgia, "Times New Roman", serif;
   --mono: ui-monospace, Consolas, monospace;
@@ -75,6 +81,7 @@
     --error: #f2b8b5;
 
     --select-arrow: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="8" fill="none"><path d="M1 1.75 6 6.25l5-4.5" stroke="%23a8a294" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg>');
+    --no-photo-icon: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%234a473c" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="4.5" width="19" height="15" rx="2"/><circle cx="8.5" cy="10" r="1.6"/><path d="M22 15.5l-6-5.5-4.5 4-3-2.5L2 16"/></svg>');
   }
 }
 
@@ -486,6 +493,13 @@ main {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.card__placeholder {
+  background-image: var(--no-photo-icon);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 15% auto;
 }
 
 /* Still Fraunces, but back down the optical axis: a recipe name is set at body
