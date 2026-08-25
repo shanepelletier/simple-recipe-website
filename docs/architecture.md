@@ -10,14 +10,15 @@ The Python dependencies used in production are:
 
 - Django, which is used for all APIs
 - Pillow, for validating images
-- psycopg, for accessing a Postgres DB
+- `psycopg`, for accessing a Postgres DB
 
 For development a few more dependencies are added:
 
-- pytest and pytest-django, for automated testing
-- mypy and django-stubs, for type checking
-- ruff, for code formatting
-- django-erd-generator, for generating an entity-relationship diagram and a data dictionary; while these could both be created by hand, generating them has the advantage of always keeping the diagrams up-to-date
+- `pytest` and `pytest-django`, for automated testing
+- `mypy` and `django-stubs`, for type checking
+- `ruff`, for code formatting
+- `django-erd-generator`, for generating an entity-relationship diagram and a data dictionary; while these could both be created by hand, generating them has the advantage of always keeping the diagrams up-to-date
+- `semgrep` and `bandit`, for automated security linting
 
 The Django project consists of two apps and the `api` package.
 
@@ -351,3 +352,24 @@ Created by admins only, via the Django admin.
 |  | is_checked | `boolean` |  |  |  |  |  |  |  |
 |  | source_recipe_id | `bigint` | [Recipe](#Recipe) |  | ✓ |  |  |  | ✓ |
 |  | created_at | `timestamp with time zone` |  |  |  |  |  |  |  |
+
+# Frontend
+
+The frontend is a React application which communicates with the Django API via standard HTTP. As with the backend, it uses the minimum amount of dependencies necessary.
+
+In production, the dependencies are:
+
+- React and `react-dom`, used on all pages
+- React Router, used to provide navigation through the app that reflects the traditional experience of clicking through links changing the URL, and to provide shareable URLs
+- `@fontsource-variable/fraunces` and `@fontsource-variable/source-sans-3`, used to provide fonts; the system-ui fonts lack personality, and bundling the fonts this way instead of using fonts from the web (for example, from Google Fonts) risks the page being displayed without the fonts that were intended
+- `@dnd-kit/core` and `@dnd-kit/sortable`, used to provide ingredient and steps drag-and-drop with smooth animations and accessibility; most of the behaviour is possible and fairly short to implement, but getting it right is difficult and using an established library ensure correctness; only used and bundled in the pages that need it, so someone only browsing the recipe grid won't even load these libraries
+
+For development a few more dependencies are added:
+
+- TypeScript, as all frontend code is written in TypeScript instead of JavaScript
+- `@types/node`, `@types/react`, and `@types/react-dom`, to provide types for TypeScript to use
+- `@testing-library/react` and `jsdom`, for testing
+- `oxfmt` and `oxlint`, for formatting and linting the frontend code
+- `vite` and `vitest`, for bundling and serving the frontend and for testing
+
+The frontend consists of a collection of components that are shared on multiple pages, a collection of core utilities and functions, and the pages themselves.
