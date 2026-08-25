@@ -386,13 +386,28 @@ input[type="file"] {
   gap: 4px 20px;
 }
 
+/* Also the sign-in footer's "Need an account?" / "Already have one?" — a
+   navigation action that happens to be text, reusing the header's link rather
+   than re-declaring it a second time under its own name. */
 .site-nav a,
-.site-user a {
+.site-user a,
+.auth__footer a {
   font-size: 15px;
   font-weight: 600;
   color: var(--text);
   text-decoration: none;
-  padding: 8px 0;
+  /* inline-flex with an authored min-height rather than padding riding on
+     line-height: the root's line-height is a percentage, so its pixel value
+     is set once at 18px and inherited unchanged — vertical padding alone held
+     this at 44px only by coincidence, and lost 3px the moment a narrower
+     viewport dropped the root to 16px. min-height fixes the box regardless of
+     what the root does, and also catches the auth footer link, which had no
+     padding at all: an inline element's own box can come out shorter than its
+     line-height once font metrics and a border are added, and 26.1px of
+     line-height was rendering as a 23px box. */
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
   /* Transparent rather than absent, so gaining the mark doesn't move the row. */
   border-bottom: 2px solid transparent;
 }
@@ -665,7 +680,16 @@ main {
 }
 
 /* The same pill the cards use for tags, made removable. */
+/* 28px tall, deliberately: the token field's whole point is that its
+   footprint stays independent of how many tags are chosen, and a chip grown
+   to 44px would fight that every time two or three are selected. The tap
+   target grows instead of the chip — an invisible ::after extending 8px above
+   and below reaches 44px without changing what's drawn. Left/right stay put:
+   the visible chip is already 60–100px wide, and extending sideways too would
+   have the tokens' hit areas overlapping their neighbours' at the field's own
+   6px gap. */
 .tagfield__token {
+  position: relative;
   min-height: 28px;
   padding: 0 6px 0 10px;
   gap: 6px;
@@ -675,6 +699,15 @@ main {
   background: var(--accent-bg);
   border: 1px solid var(--accent-border);
   border-radius: 999px;
+}
+
+.tagfield__token::after {
+  content: "";
+  position: absolute;
+  top: -8px;
+  bottom: -8px;
+  left: 0;
+  right: 0;
 }
 
 .tagfield__token:hover {
@@ -1605,18 +1638,9 @@ span[role="alert"] {
   border-top: 1px solid var(--border);
 }
 
-/* The header's own link, reused — 15px, 600, and a transparent 2px border that
-   takes the accent on hover so gaining the mark doesn't move the line. This is
-   a navigation action that happens to be text, not a link inside a sentence;
-   those are still the gap the system hasn't filled. */
-.auth__footer a {
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--text);
-  text-decoration: none;
-  border-bottom: 2px solid transparent;
-}
-
+/* Unlike a nav link, this one has no "current page" to mark, so hover is the
+   only time it shows the accent at all — the border comes up with the color
+   instead of waiting for an .active state that will never arrive. */
 .auth__footer a:hover {
   color: var(--text-h);
   border-bottom-color: var(--accent);
